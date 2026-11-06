@@ -37,5 +37,13 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
 - [ ] Vérifier la licence du SRD Daggerheart (Darrington Press) avant d'y mettre du contenu de règles, le dépôt étant public
 
+- [ ] Cache navigateur : après un push, l'ancienne version peut rester affichée ~10 min (tester en navigation privée). Prévoir un système de version pour forcer la mise à jour, surtout une fois en PWA.
+- [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli (plein écran). En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
+
+### Session 3 — 2026-11-06 (soir)
+- [x] `app.js` : objet `personnage` (= Structure Blueprint) + fonction `afficherPersonnage(perso)` + branchement dans `<div id="app">`
+- [x] Notion vue : paramètre de fonction (= input pin) vs variable passée à l'appel
+- [x] Mini-défi réussi : Enguy a modifié le nom et l'agilité directement sur GitHub
+
 ## Prochaine étape
-Structure de données d'un personnage (objet JS) + affichage d'UNE fiche en dur sur la page, sans sauvegarde.
+Boutons +/− sur PV, stress et espoir (modifier la donnée → réafficher), en respectant min 0 et max.
