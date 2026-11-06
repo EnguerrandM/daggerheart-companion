@@ -13,7 +13,7 @@
 // viendront de la sauvegarde locale.
 const personnage = {
   id: "perso-1",          // identifiant unique, servira à retrouver le perso
-  nom: "Lyra",
+  nom: "Lydia",
   ascendance: "Elfe",
   communaute: "Sylvestre",
   classe: "Rôdeur",
@@ -21,7 +21,7 @@ const personnage = {
 
   // Les 6 caractéristiques (modificateurs).
   caracs: {
-    agility: 2,
+    agility: 3,
     strength: -1,
     finesse: 1,
     instinct: 1,
