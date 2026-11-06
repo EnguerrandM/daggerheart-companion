@@ -27,9 +27,15 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] GitHub relié à Claude
 - [x] RECAP.md créé
 
+### Session 2 — 2026-11-06
+- [x] `index.html` minimal (titre + viewport mobile)
+- [x] GitHub Pages activé (branche `main`, `/root`)
+- [x] Site visible sur téléphone : https://enguerrandm.github.io/daggerheart-companion/
+- Note : sur mobile, cliquer *Save* dans Settings → Pages affiche une 404 de GitHub, mais le réglage est bien enregistré.
+
 ## À faire / points ouverts
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
 - [ ] Vérifier la licence du SRD Daggerheart (Darrington Press) avant d'y mettre du contenu de règles, le dépôt étant public
 
 ## Prochaine étape
-Premier `index.html` minimal + activation de GitHub Pages → ouvrir l'URL sur le téléphone.
+Structure de données d'un personnage (objet JS) + affichage d'UNE fiche en dur sur la page, sans sauvegarde.
