@@ -184,6 +184,12 @@ document.getElementById("app").addEventListener("click", (event) => {
         trouverPerso(persoOuvertId),
         bouton.dataset.ressource,
         Number(bouton.dataset.delta)
+    case "HealPerso":
+      modifierRessource(
+        trouverPerso(persoOuvertId),
+        bouton.dataset.ressource,
+        Number(bouton.dataset.res.max)(
+ 
       );
       break;
   }
