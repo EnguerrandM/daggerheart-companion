@@ -11,8 +11,8 @@
 // Pour l'instant ce personnage est écrit "en dur" (hardcodé) :
 // il sert juste à tester l'affichage. Plus tard, les persos
 // viendront de la sauvegarde locale.
-const personnage = {
-  id: "perso-1",          // identifiant unique, servira à retrouver le perso
+const personnageParDefaut = {
+  id: "perso-1",         // identifiant unique, servira à retrouver le perso
   nom: "Lydia",
   ascendance: "Elfe",
   communaute: "Sylvestre",
@@ -37,6 +37,35 @@ const personnage = {
     espoir: { actuel: 2, max: 6 },
   },
 };
+
+// --- 1b. LA SAUVEGARDE : localStorage ------------------------
+// localStorage = un petit coffre dans le navigateur, propre à ce site,
+// qui survit à la fermeture de l'app. Il ne stocke QUE du texte,
+// rangé sous une clé (comme un Save Game avec un "Slot Name").
+const CLE_SAUVEGARDE = "dhc-personnage";
+
+function sauvegarder() {
+  // JSON.stringify : objet → texte (on "sérialise" la Structure)
+  localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(personnage));
+}
+
+function charger() {
+  const texte = localStorage.getItem(CLE_SAUVEGARDE);
+  if (texte === null) return null; // rien de sauvegardé → premier lancement
+  try {
+    return JSON.parse(texte); // texte → objet
+  } catch (erreur) {
+    // sauvegarde corrompue : on ne plante pas, on repart du défaut
+    console.warn("Sauvegarde illisible, on repart du perso par défaut", erreur);
+    return null;
+  }
+}
+
+// Le personnage utilisé par l'app : celui sauvegardé s'il existe,
+// sinon une COPIE du perso par défaut.
+// "let" (et pas "const") car cette variable pourra être remplacée plus tard.
+// structuredClone = copie complète, pour ne jamais modifier le modèle par défaut.
+let personnage = charger() ?? structuredClone(personnageParDefaut);
 
 // --- 2. L'AFFICHAGE : transformer la donnée en HTML ---------
 // Une fonction = une "Function" Blueprint : elle prend des entrées
@@ -88,6 +117,7 @@ function modifierRessource(cle, delta) {
   const res = personnage.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
   // Clamp entre 0 et max (comme le node "Clamp" en Blueprint)
   res.actuel = Math.min(res.max, Math.max(0, res.actuel + delta));
+  sauvegarder(); // chaque modification est enregistrée aussitôt
 }
 
 // --- 4. LE RENDU : redessiner la page à partir de la donnée --
