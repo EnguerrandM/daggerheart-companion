@@ -2,78 +2,119 @@
 // Daggerheart Companion — logique de l'app
 // ============================================================
 
-// --- 1. LA DONNÉE : un personnage ---------------------------
-// Un "objet" JavaScript = un ensemble de paires clé: valeur.
-// C'est l'équivalent d'une Structure en Blueprint : des champs nommés,
-// chacun avec une valeur. Les objets peuvent contenir d'autres objets
-// (comme une Structure qui contient une autre Structure).
+// --- 1. LA DONNÉE : une LISTE de personnages ----------------
+// Un personnage = un "objet" (= Structure Blueprint).
+// Plusieurs personnages = un "tableau" [ ... ] (= Array Blueprint) :
+// une liste ordonnée, chaque élément a un index (0, 1, 2...).
 //
-// Pour l'instant ce personnage est écrit "en dur" (hardcodé) :
-// il sert juste à tester l'affichage. Plus tard, les persos
-// viendront de la sauvegarde locale.
-const personnageParDefaut = {
-  id: "perso-1",         // identifiant unique, servira à retrouver le perso
-  nom: "Lydia",
-  ascendance: "Elfe",
-  communaute: "Sylvestre",
-  classe: "Rôdeur",
-  niveau: 1,
-
-  // Les 6 caractéristiques (modificateurs).
-  caracs: {
-    agility: 3,
-    strength: -1,
-    finesse: 1,
-    instinct: 1,
-    presence: 0,
-    knowledge: 0,
+// Persos par défaut, utilisés uniquement au tout premier lancement.
+// ⚠️ Valeurs de départ (PV, stress, espoir) à vérifier dans les règles officielles.
+const personnagesParDefaut = [
+  {
+    id: "perso-1",          // identifiant unique : sert à retrouver LE bon perso
+    nom: "Lydia",
+    ascendance: "Elfe",
+    communaute: "Sylvestre",
+    classe: "Rôdeur",
+    niveau: 1,
+    caracs: { agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 },
+    ressources: {
+      pv:     { actuel: 6, max: 6 },
+      stress: { actuel: 0, max: 6 },
+      espoir: { actuel: 2, max: 6 },
+    },
   },
-
-  // Les ressources : une valeur actuelle + un maximum configurable.
-  // ⚠️ Valeurs de départ à vérifier dans les règles officielles.
-  ressources: {
-    pv:     { actuel: 6, max: 6 },
-    stress: { actuel: 0, max: 6 },
-    espoir: { actuel: 2, max: 6 },
+  {
+    id: "perso-2",
+    nom: "Brom",
+    ascendance: "Nain",
+    communaute: "Souterraine",
+    classe: "Gardien",
+    niveau: 1,
+    caracs: { agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 },
+    ressources: {
+      pv:     { actuel: 7, max: 7 },
+      stress: { actuel: 0, max: 6 },
+      espoir: { actuel: 2, max: 6 },
+    },
   },
-};
+];
 
 // --- 1b. LA SAUVEGARDE : localStorage ------------------------
 // localStorage = un petit coffre dans le navigateur, propre à ce site,
 // qui survit à la fermeture de l'app. Il ne stocke QUE du texte,
 // rangé sous une clé (comme un Save Game avec un "Slot Name").
-const CLE_SAUVEGARDE = "dhc-personnage";
+const CLE_SAUVEGARDE = "dhc-personnages";      // nouveau slot : toute la liste
+const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (version d'avant)
 
 function sauvegarder() {
-  // JSON.stringify : objet → texte (on "sérialise" la Structure)
-  localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(personnage));
+  // JSON.stringify : tableau d'objets → texte
+  localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(personnages));
 }
 
-function charger() {
-  const texte = localStorage.getItem(CLE_SAUVEGARDE);
-  if (texte === null) return null; // rien de sauvegardé → premier lancement
+// Lit un slot et renvoie l'objet, ou null si vide / illisible.
+function lireSlot(cle) {
+  const texte = localStorage.getItem(cle);
+  if (texte === null) return null;
   try {
     return JSON.parse(texte); // texte → objet
   } catch (erreur) {
-    // sauvegarde corrompue : on ne plante pas, on repart du défaut
-    console.warn("Sauvegarde illisible, on repart du perso par défaut", erreur);
+    console.warn("Sauvegarde illisible :", cle, erreur);
     return null;
   }
 }
 
-// Le personnage utilisé par l'app : celui sauvegardé s'il existe,
-// sinon une COPIE du perso par défaut.
-// "let" (et pas "const") car cette variable pourra être remplacée plus tard.
-// structuredClone = copie complète, pour ne jamais modifier le modèle par défaut.
-let personnage = charger() ?? structuredClone(personnageParDefaut);
+function charger() {
+  // 1. Cas normal : la liste a déjà été sauvegardée
+  const liste = lireSlot(CLE_SAUVEGARDE);
+  if (Array.isArray(liste)) return liste;
 
-// --- 2. L'AFFICHAGE : transformer la donnée en HTML ---------
-// Une fonction = une "Function" Blueprint : elle prend des entrées
-// (ici un personnage) et renvoie une sortie (ici du texte HTML).
+  // 2. Premier lancement de CETTE version : on part des persos par défaut...
+  const nouvelleListe = structuredClone(personnagesParDefaut);
+
+  // ...mais si l'ancienne version avait sauvegardé UN perso, on le récupère
+  // à la place du premier perso par défaut. C'est une "migration" :
+  // convertir une vieille sauvegarde au nouveau format.
+  const ancienPerso = lireSlot(ANCIENNE_CLE);
+  if (ancienPerso) nouvelleListe[0] = ancienPerso;
+
+  return nouvelleListe;
+}
+
+let personnages = charger();
+
+// Quel perso est ouvert ? null = on est sur l'écran liste.
+// C'est un "état" de l'interface : il n'est pas sauvegardé.
+let persoOuvertId = null;
+
+// Retrouver un perso par son id : .find parcourt le tableau et renvoie
+// le premier élément qui vérifie la condition (= un "Find" sur un Array
+// avec une condition, ou un ForEach + Branch + Break).
+function trouverPerso(id) {
+  return personnages.find((p) => p.id === id);
+}
+
+// --- 2. L'AFFICHAGE -----------------------------------------
+
+// Écran LISTE : un bouton par personnage.
+// .map transforme CHAQUE élément du tableau (perso → bout de HTML),
+// puis .join("") colle tous les bouts ensemble en un seul texte.
+function afficherListe() {
+  const cartes = personnages.map((p) => `
+    <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
+      <strong>${p.nom}</strong>
+      <span>${p.classe} · Niv. ${p.niveau}</span>
+      <span>PV ${p.ressources.pv.actuel}/${p.ressources.pv.max} · Stress ${p.ressources.stress.actuel}/${p.ressources.stress.max} · Espoir ${p.ressources.espoir.actuel}/${p.ressources.espoir.max}</span>
+    </button>
+  `).join("");
+
+  return `<h2>Personnages</h2>${cartes}`;
+}
+
+// Écran FICHE : la même qu'avant, avec un bouton retour en plus.
 function afficherPersonnage(perso) {
-  // Les backticks ` ` permettent d'écrire du texte sur plusieurs lignes
-  // et d'y insérer des valeurs avec ${ ... } (comme un "Format Text").
   return `
+    <button class="retour" data-action="retour">← Liste</button>
     <article class="fiche">
       <h2>${perso.nom}</h2>
       <p>${perso.ascendance} · ${perso.communaute} · ${perso.classe} · Niveau ${perso.niveau}</p>
@@ -96,48 +137,60 @@ function afficherPersonnage(perso) {
   `;
 }
 
-// Petite fonction réutilisée 3 fois (PV, stress, espoir) :
-// une ligne = bouton −, valeur, bouton +.
-// Les attributs data-... sont des "étiquettes" qu'on colle sur les boutons
-// pour savoir, au clic, QUELLE ressource modifier et DE COMBIEN.
+// Une ligne de ressource : bouton −, valeur, bouton +.
+// Les attributs data-... sont des "étiquettes" lues au moment du clic.
 function ligneRessource(cle, label, res) {
   return `
     <div class="ressource">
       <span class="label">${label}</span>
-      <button data-ressource="${cle}" data-delta="-1">−</button>
+      <button data-action="ressource" data-ressource="${cle}" data-delta="-1">−</button>
       <span class="valeur">${res.actuel} / ${res.max}</span>
-      <button data-ressource="${cle}" data-delta="1">+</button>
+      <button data-action="ressource" data-ressource="${cle}" data-delta="1">+</button>
     </div>
   `;
 }
 
 // --- 3. LA LOGIQUE : modifier la donnée ---------------------
-// On change UNIQUEMENT l'objet, jamais la page directement.
-function modifierRessource(cle, delta) {
-  const res = personnage.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
-  // Clamp entre 0 et max (comme le node "Clamp" en Blueprint)
-  res.actuel = Math.min(res.max, Math.max(0, res.actuel + delta));
-  sauvegarder(); // chaque modification est enregistrée aussitôt
+function modifierRessource(perso, cle, delta) {
+  const res = perso.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
+  res.actuel = Math.min(res.max, Math.max(0, res.actuel + delta)); // Clamp 0 → max
+  sauvegarder();
 }
 
-// --- 4. LE RENDU : redessiner la page à partir de la donnée --
-// document.getElementById("app") = "Get Widget by name" : on récupère
-// la zone <div id="app"> de index.html, puis on remplace son contenu.
+// --- 4. LE RENDU : quel écran afficher ? ---------------------
+// Comme un "Widget Switcher" : selon l'état, on affiche la liste ou la fiche.
 function rendre() {
-  document.getElementById("app").innerHTML = afficherPersonnage(personnage);
+  const perso = trouverPerso(persoOuvertId);
+  const zone = document.getElementById("app");
+  zone.innerHTML = perso ? afficherPersonnage(perso) : afficherListe();
 }
 
-// --- 5. LES ÉVÉNEMENTS : réagir aux clics ------------------
-// = un "Event OnClicked". Astuce : au lieu d'écouter chaque bouton
-// (qui sont recréés à chaque rendu), on écoute toute la zone #app
-// une seule fois, et on regarde sur quoi on a cliqué.
+// --- 5. LES ÉVÉNEMENTS : un seul écouteur pour tous les clics ----
+// Chaque bouton porte un data-action qui dit ce qu'il fait.
+// On lit l'action, puis on "switch" dessus (= Switch on String).
 document.getElementById("app").addEventListener("click", (event) => {
-  const bouton = event.target.closest("button[data-ressource]");
-  if (!bouton) return; // clic ailleurs que sur un bouton → on ignore
+  const bouton = event.target.closest("button[data-action]");
+  if (!bouton) return;
 
-  modifierRessource(bouton.dataset.ressource, Number(bouton.dataset.delta));
-  rendre(); // donnée modifiée → on réaffiche
+  switch (bouton.dataset.action) {
+    case "ouvrir":
+      persoOuvertId = bouton.dataset.id;
+      break;
+    case "retour":
+      persoOuvertId = null;
+      break;
+    case "ressource":
+      modifierRessource(
+        trouverPerso(persoOuvertId),
+        bouton.dataset.ressource,
+        Number(bouton.dataset.delta)
+      );
+      break;
+  }
+
+  rendre(); // quelle que soit l'action : état modifié → on réaffiche
 });
 
 // Premier affichage au chargement de la page
+sauvegarder(); // enregistre tout de suite la liste (utile juste après la migration)
 rendre();

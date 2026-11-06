@@ -27,6 +27,30 @@
       gap: 0.6rem;
       margin: 0.5rem 0;
     }
+    .carte-perso {
+      display: flex;
+      flex-direction: column;   /* empile nom / classe / ressources */
+      gap: 0.25rem;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 0.75rem;
+      padding: 1rem;
+      border: none;
+      border-radius: 12px;
+      background: #2a2438;
+      color: #eee;
+      font-size: 1rem;
+    }
+    .carte-perso strong { font-size: 1.2rem; color: #d4af37; }
+    .retour {
+      margin-bottom: 0.75rem;
+      padding: 0.6rem 1rem;
+      border: 1px solid #d4af37;
+      border-radius: 8px;
+      background: none;
+      color: #d4af37;
+      font-size: 1rem;
+    }
     .ressource .label { width: 4.5rem; }
     .ressource .valeur { min-width: 3.5rem; text-align: center; }
     .ressource button {
@@ -50,6 +74,6 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=3" defer></script>
+  <script src="app.js?v=4" defer></script>
 </body>
 </html>
