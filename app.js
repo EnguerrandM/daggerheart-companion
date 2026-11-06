@@ -131,6 +131,7 @@ function afficherPersonnage(perso) {
 
       <h3>Ressources</h3>
       ${ligneRessource("pv", "PV", perso.ressources.pv)}
+<button data-action="ressource" data-ressource="pv" data-delta="99">Soin complet</button>
       ${ligneRessource("stress", "Stress", perso.ressources.stress)}
       ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
     </article>
@@ -184,12 +185,6 @@ document.getElementById("app").addEventListener("click", (event) => {
         trouverPerso(persoOuvertId),
         bouton.dataset.ressource,
         Number(bouton.dataset.delta)
-    case "HealPerso":
-      modifierRessource(
-        trouverPerso(persoOuvertId),
-        bouton.dataset.ressource,
-        Number(bouton.dataset.res.max)(
- 
       );
       break;
   }
