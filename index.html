@@ -14,10 +14,23 @@
       padding: 1.5rem;
     }
     h1 { color: #d4af37; }
+    .fiche {
+      background: #2a2438;
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .fiche h2 { margin-top: 0; }
+    .fiche h3 { color: #d4af37; margin-bottom: 0.3rem; }
   </style>
 </head>
 <body>
   <h1>Daggerheart Companion</h1>
-  <p>Version 0.0 — la chaîne fonctionne ✅</p>
+
+  <!-- Zone vide : app.js va la remplir avec la fiche du personnage -->
+  <div id="app"></div>
+
+  <!-- On charge le script. "defer" = attendre que la page soit construite
+       avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
+  <script src="app.js" defer></script>
 </body>
 </html>
