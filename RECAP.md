@@ -15,7 +15,7 @@ PWA Android pour gérer les fiches de personnages du JDR Daggerheart. Au départ
 - [~] Champs : nom, ascendance, communauté, classe, niveau (affichés, pas encore éditables)
 - [~] 6 caractéristiques : Agility, Strength, Finesse, Instinct, Presence, Knowledge (affichées, pas encore éditables)
 - [~] PV, stress, espoir avec boutons +/− (fait) et limites configurables (pas encore)
-- [ ] Sauvegarde locale (localStorage)
+- [~] Sauvegarde locale (localStorage) — fait pour UN personnage, testé sur téléphone
 - [ ] Export / import JSON
 
 Tout le reste est hors périmètre pour la V0.1.
@@ -30,6 +30,8 @@ Tout le reste est hors périmètre pour la V0.1.
   - `modifierRessource(cle, delta)` : modifie la donnée, bornée entre 0 et max (Clamp)
   - `rendre()` : redessine la page depuis la donnée
   - un seul écouteur de clic sur `#app` (délégation d'événement), boutons repérés par `data-ressource` / `data-delta`
+  - `sauvegarder()` / `charger()` : localStorage, clé `dhc-personnage`, JSON.stringify / JSON.parse, try/catch si sauvegarde corrompue
+  - `let personnage = charger() ?? structuredClone(personnageParDefaut)`
 - **Principe** : clic → modifier la donnée → `rendre()`. On ne touche jamais la page directement.
 - **Cache** : incrémenter `?v=N` dans `index.html` à chaque modif de `app.js`.
 
@@ -48,13 +50,16 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] Mini-défi réussi : Enguy a modifié le nom et l'agilité directement sur GitHub
 - [x] Boutons +/− sur PV, stress, espoir (bornés 0 → max), testés sur téléphone
 - [x] Contournement du cache avec `app.js?v=2`
+- [x] Sauvegarde locale (localStorage) : les ressources survivent à la fermeture, testé sur téléphone (`?v=3`)
 
 ## À faire / points ouverts
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
 - [ ] Vérifier la licence du SRD Daggerheart (Darrington Press) avant d'y mettre du contenu de règles, le dépôt étant public
 - [ ] Vérifier dans les règles officielles les valeurs de départ (PV selon la classe, stress, espoir max)
 - [ ] Cache : `?v=N` couvre `app.js`, mais `index.html` peut rester en cache quelques minutes. À repenser une fois en PWA (service worker).
+- [ ] Dette : pas de numéro de version dans les données sauvegardées. Si la forme de l'objet change, l'ancienne sauvegarde ne collera plus.
+- [ ] Rappel : vider les données de Chrome efface les persos → l'export JSON sera la vraie sauvegarde de secours.
 - [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
 
 ## Prochaine étape
-Sauvegarde locale : enregistrer le personnage dans `localStorage` à chaque modification et le recharger à l'ouverture. Test : modifier les PV, fermer l'app, rouvrir, retrouver la valeur.
+Passer d'UN personnage à une LISTE de personnages (tableau), avec un écran liste et un écran fiche. Sauvegarder toute la liste.
