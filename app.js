@@ -103,7 +103,7 @@ function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
       <strong>${p.nom}</strong>
-      <span>${p.classe} · $(p.ascendance) • Niv. ${p.niveau}</span>
+      <span>${p.classe} · ${p.ascendance} · Niv. ${p.niveau}</span>
       <span>PV ${p.ressources.pv.actuel}/${p.ressources.pv.max} · Stress ${p.ressources.stress.actuel}/${p.ressources.stress.max} · Espoir ${p.ressources.espoir.actuel}/${p.ressources.espoir.max}</span>
     </button>
   `).join("");
