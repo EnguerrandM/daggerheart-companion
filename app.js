@@ -60,16 +60,54 @@ function afficherPersonnage(perso) {
       </ul>
 
       <h3>Ressources</h3>
-      <ul>
-        <li>PV : ${perso.ressources.pv.actuel} / ${perso.ressources.pv.max}</li>
-        <li>Stress : ${perso.ressources.stress.actuel} / ${perso.ressources.stress.max}</li>
-        <li>Espoir : ${perso.ressources.espoir.actuel} / ${perso.ressources.espoir.max}</li>
-      </ul>
+      ${ligneRessource("pv", "PV", perso.ressources.pv)}
+      ${ligneRessource("stress", "Stress", perso.ressources.stress)}
+      ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
     </article>
   `;
 }
 
-// --- 3. LE BRANCHEMENT : mettre le HTML dans la page --------
+// Petite fonction réutilisée 3 fois (PV, stress, espoir) :
+// une ligne = bouton −, valeur, bouton +.
+// Les attributs data-... sont des "étiquettes" qu'on colle sur les boutons
+// pour savoir, au clic, QUELLE ressource modifier et DE COMBIEN.
+function ligneRessource(cle, label, res) {
+  return `
+    <div class="ressource">
+      <span class="label">${label}</span>
+      <button data-ressource="${cle}" data-delta="-1">−</button>
+      <span class="valeur">${res.actuel} / ${res.max}</span>
+      <button data-ressource="${cle}" data-delta="1">+</button>
+    </div>
+  `;
+}
+
+// --- 3. LA LOGIQUE : modifier la donnée ---------------------
+// On change UNIQUEMENT l'objet, jamais la page directement.
+function modifierRessource(cle, delta) {
+  const res = personnage.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
+  // Clamp entre 0 et max (comme le node "Clamp" en Blueprint)
+  res.actuel = Math.min(res.max, Math.max(0, res.actuel + delta));
+}
+
+// --- 4. LE RENDU : redessiner la page à partir de la donnée --
 // document.getElementById("app") = "Get Widget by name" : on récupère
 // la zone <div id="app"> de index.html, puis on remplace son contenu.
-document.getElementById("app").innerHTML = afficherPersonnage(personnage);
+function rendre() {
+  document.getElementById("app").innerHTML = afficherPersonnage(personnage);
+}
+
+// --- 5. LES ÉVÉNEMENTS : réagir aux clics ------------------
+// = un "Event OnClicked". Astuce : au lieu d'écouter chaque bouton
+// (qui sont recréés à chaque rendu), on écoute toute la zone #app
+// une seule fois, et on regarde sur quoi on a cliqué.
+document.getElementById("app").addEventListener("click", (event) => {
+  const bouton = event.target.closest("button[data-ressource]");
+  if (!bouton) return; // clic ailleurs que sur un bouton → on ignore
+
+  modifierRessource(bouton.dataset.ressource, Number(bouton.dataset.delta));
+  rendre(); // donnée modifiée → on réaffiche
+});
+
+// Premier affichage au chargement de la page
+rendre();

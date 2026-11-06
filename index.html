@@ -21,6 +21,23 @@
     }
     .fiche h2 { margin-top: 0; }
     .fiche h3 { color: #d4af37; margin-bottom: 0.3rem; }
+    .ressource {
+      display: flex;          /* éléments alignés sur une ligne */
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0.5rem 0;
+    }
+    .ressource .label { width: 4.5rem; }
+    .ressource .valeur { min-width: 3.5rem; text-align: center; }
+    .ressource button {
+      width: 2.75rem;         /* assez gros pour un pouce */
+      height: 2.75rem;
+      font-size: 1.4rem;
+      border: none;
+      border-radius: 8px;
+      background: #d4af37;
+      color: #1a1625;
+    }
   </style>
 </head>
 <body>
@@ -31,6 +48,8 @@
 
   <!-- On charge le script. "defer" = attendre que la page soit construite
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
-  <script src="app.js" defer></script>
+  <!-- ?v=2 : numéro de version. Le changer force le navigateur à
+       recharger app.js au lieu de servir sa vieille copie en cache. -->
+  <script src="app.js?v=2" defer></script>
 </body>
 </html>
