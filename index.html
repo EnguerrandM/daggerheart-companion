@@ -60,6 +60,23 @@
     }
     .ajouter { border: 2px dashed #d4af37; color: #d4af37; }
     .supprimer { margin-top: 1.5rem; border: 1px solid #c0504d; color: #e07b78; }
+    .barre { display: flex; justify-content: space-between; }
+    .champ {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 0.75rem;
+      color: #d4af37;
+      font-size: 0.9rem;
+    }
+    .champ input {
+      padding: 0.6rem;
+      border: 1px solid #554a6e;
+      border-radius: 8px;
+      background: #1a1625;
+      color: #eee;
+      font-size: 1rem;   /* 16px mini : en dessous, Chrome/Safari zooment au focus */
+    }
     .ressource .label { width: 4.5rem; }
     .ressource .valeur { min-width: 3.5rem; text-align: center; }
     .ressource button {
@@ -83,6 +100,6 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=6" defer></script>
+  <script src="app.js?v=7" defer></script>
 </body>
 </html>

@@ -87,6 +87,9 @@ let personnages = charger();
 // C'est un "état" de l'interface : il n'est pas sauvegardé.
 let persoOuvertId = null;
 
+// La fiche est-elle en mode édition ? (état d'interface, non sauvegardé)
+let modeEdition = false;
+
 // Retrouver un perso par son id : .find parcourt le tableau et renvoie
 // le premier élément qui vérifie la condition (= un "Find" sur un Array
 // avec une condition, ou un ForEach + Branch + Break).
@@ -132,14 +135,28 @@ function supprimerPerso(id) {
 
 // --- 2. L'AFFICHAGE -----------------------------------------
 
+// SÉCURITÉ : le texte tapé par l'utilisateur est injecté dans du HTML.
+// Un nom comme "<b>Bob" serait interprété comme une balise et casserait
+// la page. echapper() remplace les caractères spéciaux par leur version
+// "texte" (&lt; = "<" affiché, pas interprété). À utiliser sur TOUT texte
+// venant de l'utilisateur.
+function echapper(texte) {
+  return String(texte)
+    .replaceAll("&", "&amp;")   // en premier, sinon on ré-échappe les suivants
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 // Écran LISTE : un bouton par personnage.
 // .map transforme CHAQUE élément du tableau (perso → bout de HTML),
 // puis .join("") colle tous les bouts ensemble en un seul texte.
 function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
-      <strong>${p.nom}</strong>
-      <span>${p.classe} · ${p.ascendance} · Niv. ${p.niveau}</span>
+      <strong>${echapper(p.nom)}</strong>
+      <span>${echapper(p.classe)} · ${echapper(p.ascendance)} · Niv. ${p.niveau}</span>
       <span>PV ${p.ressources.pv.actuel}/${p.ressources.pv.max} · Stress ${p.ressources.stress.actuel}/${p.ressources.stress.max} · Espoir ${p.ressources.espoir.actuel}/${p.ressources.espoir.max}</span>
     </button>
   `).join("");
@@ -151,13 +168,46 @@ function afficherListe() {
   `;
 }
 
-// Écran FICHE : la même qu'avant, avec un bouton retour en plus.
+// Bloc identité, version LECTURE.
+function identiteLecture(perso) {
+  return `
+    <h2>${echapper(perso.nom)}</h2>
+    <p>${echapper(perso.ascendance)} · ${echapper(perso.communaute)} · ${echapper(perso.classe)} · Niveau ${perso.niveau}</p>
+  `;
+}
+
+// Un champ de saisie. data-champ = le nom de la propriété à modifier
+// (même principe que data-ressource pour les boutons).
+function champTexte(perso, champ, label) {
+  return `
+    <label class="champ">${label}
+      <input type="text" data-champ="${champ}" value="${echapper(perso[champ])}">
+    </label>
+  `;
+}
+
+// Bloc identité, version ÉDITION.
+function identiteEdition(perso) {
+  return `
+    ${champTexte(perso, "nom", "Nom")}
+    ${champTexte(perso, "ascendance", "Ascendance")}
+    ${champTexte(perso, "communaute", "Communauté")}
+    ${champTexte(perso, "classe", "Classe")}
+    <label class="champ">Niveau
+      <input type="number" inputmode="numeric" min="1" max="10" data-champ="niveau" value="${perso.niveau}">
+    </label>
+  `;
+}
+
+// Écran FICHE : identité en lecture ou en édition selon modeEdition.
 function afficherPersonnage(perso) {
   return `
-    <button class="retour" data-action="retour">← Liste</button>
+    <div class="barre">
+      <button class="retour" data-action="retour">← Liste</button>
+      <button class="retour" data-action="editer">${modeEdition ? "✓ Terminé" : "✎ Modifier"}</button>
+    </div>
     <article class="fiche">
-      <h2>${perso.nom}</h2>
-      <p>${perso.ascendance} · ${perso.communaute} · ${perso.classe} · Niveau ${perso.niveau}</p>
+      ${modeEdition ? identiteEdition(perso) : identiteLecture(perso)}
 
       <h3>Caractéristiques</h3>
       <ul>
@@ -175,7 +225,7 @@ function afficherPersonnage(perso) {
       ${ligneRessource("stress", "Stress", perso.ressources.stress)}
       ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
     </article>
-    <button class="supprimer" data-action="supprimer">Supprimer ce personnage</button>
+    ${modeEdition ? `<button class="supprimer" data-action="supprimer">Supprimer ce personnage</button>` : ""}
   `;
 }
 
@@ -220,6 +270,10 @@ document.getElementById("app").addEventListener("click", (event) => {
       break;
     case "retour":
       persoOuvertId = null;
+      modeEdition = false;
+      break;
+    case "editer":
+      modeEdition = !modeEdition; // ! = NOT : bascule true ↔ false (= Flip Flop)
       break;
     case "ressource":
       modifierRessource(
@@ -229,7 +283,8 @@ document.getElementById("app").addEventListener("click", (event) => {
       );
       break;
     case "ajouter":
-      persoOuvertId = ajouterPerso().id; // on ouvre directement la fiche du nouveau
+      persoOuvertId = ajouterPerso().id; // on ouvre directement la fiche du nouveau...
+      modeEdition = true;                // ...en mode édition, pour lui donner un nom
       break;
     case "supprimer": {
       const perso = trouverPerso(persoOuvertId);
@@ -238,12 +293,32 @@ document.getElementById("app").addEventListener("click", (event) => {
       if (confirm(`Supprimer ${perso.nom} ? C'est définitif.`)) {
         supprimerPerso(persoOuvertId);
         persoOuvertId = null; // le perso n'existe plus → retour à la liste
+        modeEdition = false;
       }
       break;
     }
   }
 
   rendre(); // quelle que soit l'action : état modifié → on réaffiche
+});
+
+// --- 6. LA SAISIE : un écouteur pour tous les champs ---------
+// "input" se déclenche à CHAQUE frappe (= un Event "On Text Changed").
+// On met à jour la donnée et on sauvegarde, mais on NE rappelle PAS
+// rendre() : ça reconstruirait le champ et fermerait le clavier.
+document.getElementById("app").addEventListener("input", (event) => {
+  const champ = event.target.dataset.champ;
+  if (!champ) return;
+  const perso = trouverPerso(persoOuvertId);
+
+  if (champ === "niveau") {
+    const n = parseInt(event.target.value, 10); // texte → nombre entier
+    if (Number.isNaN(n)) return;                // champ vide pendant la frappe : on ignore
+    perso.niveau = Math.min(10, Math.max(1, n)); // Clamp 1 → 10 (⚠️ à vérifier dans les règles)
+  } else {
+    perso[champ] = event.target.value;
+  }
+  sauvegarder();
 });
 
 // Premier affichage au chargement de la page

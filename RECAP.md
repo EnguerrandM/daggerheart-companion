@@ -11,8 +11,8 @@ PWA Android pour gérer les fiches de personnages du JDR Daggerheart. Au départ
 
 ## Périmètre V0.1
 - [x] Liste de personnages (écran liste + ouverture d'une fiche + retour)
-- [ ] Créer / supprimer un perso ; modifier les champs d'une fiche
-- [~] Champs : nom, ascendance, communauté, classe, niveau (affichés, pas encore éditables)
+- [x] Créer / supprimer un perso
+- [~] Champs : nom, ascendance, communauté, classe, niveau (éditables en mode ✎ Modifier, v7 — à tester)
 - [~] 6 caractéristiques : Agility, Strength, Finesse, Instinct, Presence, Knowledge (affichées, pas encore éditables)
 - [~] PV, stress, espoir avec boutons +/− (fait) et limites configurables (pas encore)
 - [x] Sauvegarde locale (localStorage) de toute la liste, testée sur téléphone
@@ -56,6 +56,12 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] Exos d'Enguy : 1) ascendance dans la liste ✅ (piège vu : `$(...)` au lieu de `${...}`) ; 2) bouton « Soin complet » (`data-delta="99"`) ✅ après une 1re tentative cassée (case inséré au milieu d'un autre, `dataset` ne contient que les data-...)
 - [x] Exo 3 trouvé par Enguy (2026-11-07) : une sauvegarde existe → `charger()` fait `return liste` avant d'atteindre `personnagesParDefaut`. Les défauts ne servent que sans sauvegarde (navigation privée, autre appareil, données effacées).
 
+### Session 4 — 2026-11-07
+- [x] Créer un perso (`.push`, id = `"perso-" + Date.now()`) / supprimer (`.filter` + `confirm()`), testé sur téléphone (`?v=6`)
+- Décision : pas de formulaire de création séparé. « Nouveau » crée un perso vierge et ouvre sa fiche en mode édition → un seul écran à maintenir.
+- [ ] Mode édition (`modeEdition`, bouton ✎ Modifier / ✓ Terminé) pour l'identité ; écouteur `input` sur `data-champ` ; `echapper()` contre l'injection HTML (`?v=7`) — à tester
+- Le bouton Supprimer n'apparaît qu'en mode édition (évite les fausses manips en partie).
+
 ## À faire / points ouverts
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
 - [ ] Vérifier la licence du SRD Daggerheart (Darrington Press) avant d'y mettre du contenu de règles, le dépôt étant public
@@ -67,4 +73,4 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
 
 ## Prochaine étape
-Créer un nouveau personnage (formulaire : nom, ascendance, communauté, classe, niveau, caracs, max des ressources) + supprimer un perso.
+Mode édition étendu aux 6 caracs et aux max des ressources (= « limites configurables »). Puis export/import JSON.
