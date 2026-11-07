@@ -70,6 +70,11 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] « Soin complet » = hack `delta 99`. Version propre possible : action `soin` qui fait `res.actuel = res.max` (bon exo sur le `switch`). Bouton pas encore stylé (exo CSS possible).
 - [ ] Dette : pas de numéro de version dans les données sauvegardées. Si la forme de l'objet change, l'ancienne sauvegarde ne collera plus.
 - [ ] Rappel : vider les données de Chrome efface les persos → l'export JSON sera la vraie sauvegarde de secours.
+- [ ] Après la V0.1 — souhaits d'Enguy (2026-11-07) :
+  - Choix de création (ascendance, communauté, classe…) figés une fois le perso validé. Garder un mode « Correction MJ » (= l'actuel ✎ Modifier) comme porte de sortie.
+  - Niveau et caracs qui n'augmentent que via un écran de montée de niveau (règles de level-up à vérifier).
+  - Modificateur temporaire buff/debuff sur les caracs, affiché `base (modifiée)`. Stocker base et modif SÉPARÉMENT (ex. `{ base: 2, modif: -1 }`), jamais fusionnés.
+  - → Pré-requis : version de schéma dans les sauvegardes (voir dette ci-dessus), à faire avant l'export JSON.
 - [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
 
 ## Prochaine étape
