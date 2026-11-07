@@ -54,7 +54,7 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] Sauvegarde locale (localStorage) : les ressources survivent à la fermeture, testé sur téléphone (`?v=3`)
 - [x] Liste de personnages (Lydia + Brom), navigation liste ↔ fiche, migration de l'ancienne sauvegarde (`?v=4`)
 - [x] Exos d'Enguy : 1) ascendance dans la liste ✅ (piège vu : `$(...)` au lieu de `${...}`) ; 2) bouton « Soin complet » (`data-delta="99"`) ✅ après une 1re tentative cassée (case inséré au milieu d'un autre, `dataset` ne contient que les data-...)
-- [ ] Exo 3 en cours (Enguy cherche) : pourquoi un 3e perso ajouté dans `personnagesParDefaut` n'apparaît pas sur le téléphone ? Dans quel cas apparaîtrait-il ? — ne pas donner la réponse directement
+- [x] Exo 3 trouvé par Enguy (2026-11-07) : une sauvegarde existe → `charger()` fait `return liste` avant d'atteindre `personnagesParDefaut`. Les défauts ne servent que sans sauvegarde (navigation privée, autre appareil, données effacées).
 
 ## À faire / points ouverts
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
@@ -67,5 +67,4 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
 
 ## Prochaine étape
-1. Correction de l'exo 3 avec Enguy.
-2. Créer un nouveau personnage (formulaire : nom, ascendance, communauté, classe, niveau, caracs, max des ressources) + supprimer un perso.
+Créer un nouveau personnage (formulaire : nom, ascendance, communauté, classe, niveau, caracs, max des ressources) + supprimer un perso.
