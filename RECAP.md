@@ -86,5 +86,23 @@ Tout le reste est hors périmètre pour la V0.1.
   - → Pré-requis : version de schéma dans les sauvegardes (voir dette ci-dessus), à faire avant l'export JSON.
 - [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
 
+## Plan V0.2 (validé le 2026-11-07)
+1. PWA : manifeste + service worker « réseau d'abord » → règle le cache d'`index.html`, app installable, hors-ligne partiel.
+2. Devoirs Enguy (sans code) : lire la licence DPCGL ; choisir noms FR ou EN.
+3. Données de référence (classes, ascendances, communautés) dans un fichier séparé + listes déroulantes `<select>` avec option « Autre ».
+4. Écran de création → validation → identité verrouillée ; le mode ✎ devient « Correction MJ ».
+5. Modificateurs de caracs `{ base, modif }` → 1re vraie migration (v1 → v2).
+- Repoussé en V0.3 : montée de niveau.
+
+**Critère de réussite V0.2** : installer l'app sur l'écran d'accueil ; créer un perso via l'écran de création avec listes ; identité verrouillée ; appliquer/retirer un debuff ; un export d'avant la V0.2 se réimporte correctement (migration).
+
+## Exos d'Enguy (avant la V0.2)
+- [ ] 1. Styler le bouton « Soin complet » (CSS + variables)
+- [ ] 2. Nombre de persos dans le titre : « Personnages (3) »
+- [ ] 3. Nom vide → afficher « Sans nom »
+- [ ] 4. « Soin complet » propre : action `soin` au lieu du hack `delta 99`
+- [ ] 5. Bouton « Dupliquer » un perso
+- [ ] Bonus : trier la liste par nom
+
 ## Prochaine étape
-V0.1 terminée. Choisir le 1er chantier de la V0.2 parmi les souhaits listés ci-dessus (listes déroulantes + écran de création, verrouillage, modificateurs de caracs, level-up), et régler enfin le problème de cache d'`index.html`.
+Exos ci-dessus, puis V0.2 étape 1 (PWA / cache).
