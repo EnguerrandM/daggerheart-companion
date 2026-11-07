@@ -12,11 +12,13 @@ PWA Android pour gérer les fiches de personnages du JDR Daggerheart. Au départ
 ## Périmètre V0.1
 - [x] Liste de personnages (écran liste + ouverture d'une fiche + retour)
 - [x] Créer / supprimer un perso
-- [~] Champs : nom, ascendance, communauté, classe, niveau (éditables en mode ✎ Modifier, v7 — à tester)
-- [~] 6 caractéristiques : Agility, Strength, Finesse, Instinct, Presence, Knowledge (affichées, pas encore éditables)
-- [~] PV, stress, espoir avec boutons +/− (fait) et limites configurables (pas encore)
+- [x] Champs : nom, ascendance, communauté, classe, niveau (éditables en mode ✎ Modifier)
+- [x] 6 caractéristiques : Agility, Strength, Finesse, Instinct, Presence, Knowledge (éditables)
+- [x] PV, stress, espoir avec boutons +/− et limites configurables
 - [x] Sauvegarde locale (localStorage) de toute la liste, testée sur téléphone
-- [~] Export / import JSON (v10 — à tester sur téléphone)
+- [x] Export / import JSON
+
+**✅ V0.1 TERMINÉE le 2026-11-07** (critère de réussite validé sur téléphone).
 
 Tout le reste est hors périmètre pour la V0.1.
 
@@ -59,11 +61,13 @@ Tout le reste est hors périmètre pour la V0.1.
 ### Session 4 — 2026-11-07
 - [x] Créer un perso (`.push`, id = `"perso-" + Date.now()`) / supprimer (`.filter` + `confirm()`), testé sur téléphone (`?v=6`)
 - Décision : pas de formulaire de création séparé. « Nouveau » crée un perso vierge et ouvre sa fiche en mode édition → un seul écran à maintenir.
-- [ ] Mode édition (`modeEdition`, bouton ✎ Modifier / ✓ Terminé) pour l'identité ; écouteur `input` sur `data-champ` ; `echapper()` contre l'injection HTML (`?v=7`) — à tester
+- [x] Mode édition (`modeEdition`, bouton ✎ Modifier / ✓ Terminé) pour l'identité ; écouteur `input` sur `data-champ` ; `echapper()` contre l'injection HTML (`?v=7`) ✅
 - Le bouton Supprimer n'apparaît qu'en mode édition (évite les fausses manips en partie).
-- [ ] Caracs et max des ressources réglables en mode édition, via boutons −/+ (le clavier numérique Android cache souvent le « − »). `ligneReglage()` générique, listes `CARACS` / `RESSOURCES`, `BORNES` + `borner()` centralisés. Baisser un max ramène l'actuel dessous. (`?v=8`) ✅ testé
-- [ ] Version des données (`?v=9`) — à tester : sauvegarde = enveloppe `{ version: 1, personnages: [...] }` ; `migrer()` convertit en escalier (v0 = tableau nu → v1) et servira aussi à l'import JSON ; si la sauvegarde est illisible ou d'une version inconnue, copie brute mise de côté sous `dhc-personnages-secours` avant que les défauts n'écrasent tout. Testé en simulation (v0, v1, v99, JSON cassé). ✅ testé sur téléphone
-- [ ] Export/import JSON (`?v=10`) — à tester : export = Blob + lien `<a download>` → `daggerheart-AAAA-MM-JJ.json` (enveloppe versionnée, indentée) ; import = `<input type="file">` caché dans index.html (hors de #app), `async/await` pour lire le fichier, `migrer()` + `persoValide()` (`.every`), confirmation, puis REMPLACE la liste. Copie de la liste d'avant sous `dhc-personnages-avant-import`. `CARACS`/`RESSOURCES` remontées en haut du fichier (piège : un `const` n'existe pas avant sa ligne).
+- [x] Caracs et max des ressources réglables en mode édition, via boutons −/+ (le clavier numérique Android cache souvent le « − »). `ligneReglage()` générique, listes `CARACS` / `RESSOURCES`, `BORNES` + `borner()` centralisés. Baisser un max ramène l'actuel dessous. (`?v=8`) ✅ testé
+- [x] Version des données (`?v=9`) : sauvegarde = enveloppe `{ version: 1, personnages: [...] }` ; `migrer()` convertit en escalier (v0 = tableau nu → v1) et servira aussi à l'import JSON ; si la sauvegarde est illisible ou d'une version inconnue, copie brute mise de côté sous `dhc-personnages-secours` avant que les défauts n'écrasent tout. Testé en simulation (v0, v1, v99, JSON cassé). ✅ testé sur téléphone
+- [x] Export/import JSON (`?v=10`) ✅ testé sur téléphone : export = Blob + lien `<a download>` → `daggerheart-AAAA-MM-JJ.json` (enveloppe versionnée, indentée) ; import = `<input type="file">` caché dans index.html (hors de #app), `async/await` pour lire le fichier, `migrer()` + `persoValide()` (`.every`), confirmation, puis REMPLACE la liste. Copie de la liste d'avant sous `dhc-personnages-avant-import`. `CARACS`/`RESSOURCES` remontées en haut du fichier (piège : un `const` n'existe pas avant sa ligne).
+
+- [x] Nouvelle palette sarcelle / or champagne (inspirée d'une image de référence d'Enguy), couleurs centralisées en variables CSS dans `:root` (= Material Parameter Collection), `<meta name="theme-color">` pour la barre Android. Le bouton « Soin complet » reste non stylé (exo CSS).
 
 ## À faire / points ouverts
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
@@ -83,4 +87,4 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
 
 ## Prochaine étape
-Export/import JSON (réutiliser l'enveloppe versionnée + `migrer()` à l'import) → V0.1 terminée.
+V0.1 terminée. Choisir le 1er chantier de la V0.2 parmi les souhaits listés ci-dessus (listes déroulantes + écran de création, verrouillage, modificateurs de caracs, level-up), et régler enfin le problème de cache d'`index.html`.

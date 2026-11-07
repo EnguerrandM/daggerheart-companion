@@ -4,23 +4,50 @@
   <meta charset="UTF-8">
   <!-- Indispensable sur mobile : sans ça, le téléphone affiche la page "dézoomée" comme un site de PC -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Couleur de la barre d'adresse / barre système sur Android -->
+  <meta name="theme-color" content="#0a2422">
   <title>Daggerheart Companion</title>
   <style>
+    /* ===== PALETTE =====
+       Variables CSS (= Material Parameter Collection) : on change une
+       couleur ICI et toute l'app suit. Usage : var(--or). */
+    :root {
+      --fond:        #0a2422;   /* sarcelle presque noir */
+      --fond-halo:   #1b4d47;   /* halos "nébuleuse" du fond */
+      --carte:       rgba(19, 58, 54, 0.78);  /* cartes légèrement translucides */
+      --carte-creux: #0c2b28;   /* fond des champs de saisie */
+      --bordure:     #2f5f58;
+      --or:          #d6b676;   /* or champagne, plus doux que l'ancien jaune */
+      --or-clair:    #f1ddb0;
+      --texte:       #ece6d6;   /* blanc chaud, pas blanc pur */
+      --texte-doux:  #a8bfb8;
+      --danger:      #d98a6e;   /* terracotta, lisible sur le vert */
+    }
+
     body {
       font-family: system-ui, sans-serif;
-      background: #1a1625;
-      color: #eee;
+      color: var(--texte);
       margin: 0;
       padding: 1.5rem;
+      min-height: 100vh;
+      box-sizing: border-box;
+      /* Plusieurs fonds empilés : deux halos flous + la couleur de base.
+         radial-gradient = dégradé circulaire (≈ un Radial Gradient en matériau). */
+      background:
+        radial-gradient(ellipse at 85% 5%,  var(--fond-halo) 0%, transparent 55%),
+        radial-gradient(ellipse at 10% 95%, #163f3a 0%, transparent 50%),
+        var(--fond);
     }
-    h1 { color: #d4af37; }
+    h1 { color: var(--or); letter-spacing: 0.04em; }
+    h2 { color: var(--or-clair); }
     .fiche {
-      background: #2a2438;
+      background: var(--carte);
+      border: 1px solid var(--bordure);
       border-radius: 12px;
       padding: 1rem;
     }
     .fiche h2 { margin-top: 0; }
-    .fiche h3 { color: #d4af37; margin-bottom: 0.3rem; }
+    .fiche h3 { color: var(--or); margin-bottom: 0.3rem; }
     .ressource {
       display: flex;          /* éléments alignés sur une ligne */
       align-items: center;
@@ -35,20 +62,20 @@
       text-align: left;
       margin-bottom: 0.75rem;
       padding: 1rem;
-      border: none;
+      border: 1px solid var(--bordure);
       border-radius: 12px;
-      background: #2a2438;
-      color: #eee;
+      background: var(--carte);
+      color: var(--texte-doux);
       font-size: 1rem;
     }
-    .carte-perso strong { font-size: 1.2rem; color: #d4af37; }
+    .carte-perso strong { font-size: 1.2rem; color: var(--or); }
     .retour {
       margin-bottom: 0.75rem;
       padding: 0.6rem 1rem;
-      border: 1px solid #d4af37;
+      border: 1px solid var(--or);
       border-radius: 8px;
       background: none;
-      color: #d4af37;
+      color: var(--or);
       font-size: 1rem;
     }
     .ajouter, .supprimer {
@@ -58,8 +85,8 @@
       font-size: 1rem;
       background: none;
     }
-    .ajouter { border: 2px dashed #d4af37; color: #d4af37; }
-    .supprimer { margin-top: 1.5rem; border: 1px solid #c0504d; color: #e07b78; }
+    .ajouter { border: 2px dashed var(--or); color: var(--or); }
+    .supprimer { margin-top: 1.5rem; border: 1px solid var(--danger); color: var(--danger); }
     .barre { display: flex; justify-content: space-between; }
     .fichiers { margin-top: 1.5rem; }
     .champ {
@@ -67,15 +94,15 @@
       flex-direction: column;
       gap: 0.25rem;
       margin-bottom: 0.75rem;
-      color: #d4af37;
+      color: var(--or);
       font-size: 0.9rem;
     }
     .champ input {
       padding: 0.6rem;
-      border: 1px solid #554a6e;
+      border: 1px solid var(--bordure);
       border-radius: 8px;
-      background: #1a1625;
-      color: #eee;
+      background: var(--carte-creux);
+      color: var(--texte);
       font-size: 1rem;   /* 16px mini : en dessous, Chrome/Safari zooment au focus */
     }
     .ressource .label { width: 6rem; }   /* assez large pour "Knowledge" / "Stress max" */
@@ -86,8 +113,8 @@
       font-size: 1.4rem;
       border: none;
       border-radius: 8px;
-      background: #d4af37;
-      color: #1a1625;
+      background: var(--or);
+      color: var(--fond);
     }
   </style>
 </head>
