@@ -40,6 +40,25 @@ const personnagesParDefaut = [
   },
 ];
 
+// La liste des caracs, dans l'ordre d'affichage : [clé, label].
+// Une seule liste → affichage, édition ET validation l'utilisent.
+// ⚠️ Déclarées ICI, en haut : un `const` n'existe qu'à partir de sa ligne,
+// et charger() (plus bas) s'exécute au démarrage et en a besoin.
+const CARACS = [
+  ["agility", "Agility"],
+  ["strength", "Strength"],
+  ["finesse", "Finesse"],
+  ["instinct", "Instinct"],
+  ["presence", "Presence"],
+  ["knowledge", "Knowledge"],
+];
+
+const RESSOURCES = [
+  ["pv", "PV"],
+  ["stress", "Stress"],
+  ["espoir", "Espoir"],
+];
+
 // --- 1b. LA SAUVEGARDE : localStorage ------------------------
 // localStorage = un petit coffre dans le navigateur, propre à ce site,
 // qui survit à la fermeture de l'app. Il ne stocke QUE du texte,
@@ -91,7 +110,29 @@ function migrer(donnees) {
     return null;
   }
 
+  // .every = "est-ce que TOUS les éléments vérifient la condition ?"
+  // (= ForEach + Branch, qui s'arrête au premier false)
+  if (!donnees.personnages.every(persoValide)) {
+    console.warn("Un perso a une forme inattendue");
+    return null;
+  }
+
   return donnees.personnages;
+}
+
+// Vérifie qu'un perso a bien tous les morceaux dont l'affichage a besoin.
+// Utile surtout pour l'import : un fichier peut venir de n'importe où.
+function persoValide(p) {
+  const estObjet = (x) => typeof x === "object" && x !== null;
+  const resOk = (r) => estObjet(r) && typeof r.actuel === "number" && typeof r.max === "number";
+  return estObjet(p)
+    && typeof p.id === "string"
+    && typeof p.nom === "string"
+    && typeof p.niveau === "number"
+    && estObjet(p.caracs)
+    && CARACS.every(([cle]) => typeof p.caracs[cle] === "number")
+    && estObjet(p.ressources)
+    && RESSOURCES.every(([cle]) => resOk(p.ressources[cle]));
 }
 
 // Lit un slot et renvoie l'objet, ou null si vide / illisible.
@@ -239,6 +280,10 @@ function afficherListe() {
     <h2>Personnages</h2>
     ${cartes}
     <button class="ajouter" data-action="ajouter">+ Nouveau personnage</button>
+    <div class="barre fichiers">
+      <button class="retour" data-action="exporter">⬇ Exporter</button>
+      <button class="retour" data-action="importer">⬆ Importer</button>
+    </div>
   `;
 }
 
@@ -272,23 +317,6 @@ function identiteEdition(perso) {
     </label>
   `;
 }
-
-// La liste des caracs, dans l'ordre d'affichage : [clé, label].
-// Une seule liste → lecture ET édition l'utilisent, pas de doublon.
-const CARACS = [
-  ["agility", "Agility"],
-  ["strength", "Strength"],
-  ["finesse", "Finesse"],
-  ["instinct", "Instinct"],
-  ["presence", "Presence"],
-  ["knowledge", "Knowledge"],
-];
-
-const RESSOURCES = [
-  ["pv", "PV"],
-  ["stress", "Stress"],
-  ["espoir", "Espoir"],
-];
 
 // Une ligne de réglage générique : −, valeur, +.
 // action = quel "case" du switch traitera le clic ; cle = quoi modifier.
@@ -385,6 +413,58 @@ function modifierMax(perso, cle, delta) {
   sauvegarder();
 }
 
+// --- 3b. EXPORT / IMPORT JSON --------------------------------
+
+function exporter() {
+  // Même enveloppe que la sauvegarde. null, 2 = texte indenté, lisible à l'œil.
+  const enveloppe = { version: VERSION_DONNEES, personnages: personnages };
+  const texte = JSON.stringify(enveloppe, null, 2);
+
+  // Blob = un "fichier en mémoire". createObjectURL lui donne une adresse
+  // temporaire, qu'on met sur un lien <a download> invisible qu'on "clique".
+  const blob = new Blob([texte], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = `daggerheart-${new Date().toISOString().slice(0, 10)}.json`; // ex. daggerheart-2026-11-07.json
+  lien.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // libère la mémoire un peu après
+}
+
+// async = fonction qui peut "attendre" (await) sans bloquer l'app,
+// comme un nœud latent (Delay, Async Load Asset) en Blueprint.
+async function importer(fichier) {
+  let donnees;
+  try {
+    const texte = await fichier.text(); // lecture du fichier : prend un peu de temps
+    donnees = JSON.parse(texte);
+  } catch (erreur) {
+    alert("Ce fichier n'est pas un JSON lisible.");
+    return;
+  }
+
+  const liste = migrer(donnees); // même escalier que la sauvegarde locale
+  if (!liste) {
+    alert("Ce fichier ne ressemble pas à une sauvegarde Daggerheart Companion (ou vient d'une version plus récente).");
+    return;
+  }
+
+  const ok = confirm(
+    `Importer ${liste.length} personnage(s) ?\n` +
+    `Ça REMPLACE les ${personnages.length} personnage(s) actuels.`
+  );
+  if (!ok) return;
+
+  // Filet : on garde la liste actuelle de côté avant de l'écraser.
+  localStorage.setItem(CLE_SAUVEGARDE + "-avant-import", localStorage.getItem(CLE_SAUVEGARDE));
+
+  personnages = liste;
+  persoOuvertId = null;
+  modeEdition = false;
+  sauvegarder();
+  rendre();
+}
+
 // --- 4. LE RENDU : quel écran afficher ? ---------------------
 // Comme un "Widget Switcher" : selon l'état, on affiche la liste ou la fiche.
 function rendre() {
@@ -413,6 +493,13 @@ document.getElementById("app").addEventListener("click", (event) => {
       break;
     case "max":
       modifierMax(trouverPerso(persoOuvertId), bouton.dataset.cle, Number(bouton.dataset.delta));
+      break;
+    case "exporter":
+      exporter();
+      break;
+    case "importer":
+      // On "clique" à sa place sur le sélecteur de fichier caché (dans index.html)
+      document.getElementById("fichier-import").click();
       break;
     case "editer":
       modeEdition = !modeEdition; // ! = NOT : bascule true ↔ false (= Flip Flop)
@@ -461,6 +548,15 @@ document.getElementById("app").addEventListener("input", (event) => {
     perso[champ] = event.target.value;
   }
   sauvegarder();
+});
+
+// --- 7. LE FICHIER CHOISI POUR L'IMPORT ----------------------
+// "change" se déclenche quand l'utilisateur a choisi un fichier.
+document.getElementById("fichier-import").addEventListener("change", (event) => {
+  const fichier = event.target.files[0]; // files = liste ; on n'en prend qu'un
+  if (fichier) importer(fichier);
+  // PIÈGE : sans ça, rechoisir le MÊME fichier ne redéclenche pas "change"
+  event.target.value = "";
 });
 
 // Premier affichage au chargement de la page

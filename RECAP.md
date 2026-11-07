@@ -16,7 +16,7 @@ PWA Android pour gérer les fiches de personnages du JDR Daggerheart. Au départ
 - [~] 6 caractéristiques : Agility, Strength, Finesse, Instinct, Presence, Knowledge (affichées, pas encore éditables)
 - [~] PV, stress, espoir avec boutons +/− (fait) et limites configurables (pas encore)
 - [x] Sauvegarde locale (localStorage) de toute la liste, testée sur téléphone
-- [ ] Export / import JSON
+- [~] Export / import JSON (v10 — à tester sur téléphone)
 
 Tout le reste est hors périmètre pour la V0.1.
 
@@ -62,7 +62,8 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Mode édition (`modeEdition`, bouton ✎ Modifier / ✓ Terminé) pour l'identité ; écouteur `input` sur `data-champ` ; `echapper()` contre l'injection HTML (`?v=7`) — à tester
 - Le bouton Supprimer n'apparaît qu'en mode édition (évite les fausses manips en partie).
 - [ ] Caracs et max des ressources réglables en mode édition, via boutons −/+ (le clavier numérique Android cache souvent le « − »). `ligneReglage()` générique, listes `CARACS` / `RESSOURCES`, `BORNES` + `borner()` centralisés. Baisser un max ramène l'actuel dessous. (`?v=8`) ✅ testé
-- [ ] Version des données (`?v=9`) — à tester : sauvegarde = enveloppe `{ version: 1, personnages: [...] }` ; `migrer()` convertit en escalier (v0 = tableau nu → v1) et servira aussi à l'import JSON ; si la sauvegarde est illisible ou d'une version inconnue, copie brute mise de côté sous `dhc-personnages-secours` avant que les défauts n'écrasent tout. Testé en simulation (v0, v1, v99, JSON cassé).
+- [ ] Version des données (`?v=9`) — à tester : sauvegarde = enveloppe `{ version: 1, personnages: [...] }` ; `migrer()` convertit en escalier (v0 = tableau nu → v1) et servira aussi à l'import JSON ; si la sauvegarde est illisible ou d'une version inconnue, copie brute mise de côté sous `dhc-personnages-secours` avant que les défauts n'écrasent tout. Testé en simulation (v0, v1, v99, JSON cassé). ✅ testé sur téléphone
+- [ ] Export/import JSON (`?v=10`) — à tester : export = Blob + lien `<a download>` → `daggerheart-AAAA-MM-JJ.json` (enveloppe versionnée, indentée) ; import = `<input type="file">` caché dans index.html (hors de #app), `async/await` pour lire le fichier, `migrer()` + `persoValide()` (`.every`), confirmation, puis REMPLACE la liste. Copie de la liste d'avant sous `dhc-personnages-avant-import`. `CARACS`/`RESSOURCES` remontées en haut du fichier (piège : un `const` n'existe pas avant sa ligne).
 
 ## À faire / points ouverts
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
