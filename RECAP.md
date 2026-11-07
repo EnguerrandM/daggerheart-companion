@@ -61,7 +61,8 @@ Tout le reste est hors périmètre pour la V0.1.
 - Décision : pas de formulaire de création séparé. « Nouveau » crée un perso vierge et ouvre sa fiche en mode édition → un seul écran à maintenir.
 - [ ] Mode édition (`modeEdition`, bouton ✎ Modifier / ✓ Terminé) pour l'identité ; écouteur `input` sur `data-champ` ; `echapper()` contre l'injection HTML (`?v=7`) — à tester
 - Le bouton Supprimer n'apparaît qu'en mode édition (évite les fausses manips en partie).
-- [ ] Caracs et max des ressources réglables en mode édition, via boutons −/+ (le clavier numérique Android cache souvent le « − »). `ligneReglage()` générique, listes `CARACS` / `RESSOURCES`, `BORNES` + `borner()` centralisés. Baisser un max ramène l'actuel dessous. (`?v=8`) — à tester
+- [ ] Caracs et max des ressources réglables en mode édition, via boutons −/+ (le clavier numérique Android cache souvent le « − »). `ligneReglage()` générique, listes `CARACS` / `RESSOURCES`, `BORNES` + `borner()` centralisés. Baisser un max ramène l'actuel dessous. (`?v=8`) ✅ testé
+- [ ] Version des données (`?v=9`) — à tester : sauvegarde = enveloppe `{ version: 1, personnages: [...] }` ; `migrer()` convertit en escalier (v0 = tableau nu → v1) et servira aussi à l'import JSON ; si la sauvegarde est illisible ou d'une version inconnue, copie brute mise de côté sous `dhc-personnages-secours` avant que les défauts n'écrasent tout. Testé en simulation (v0, v1, v99, JSON cassé).
 
 ## À faire / points ouverts
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
@@ -69,7 +70,8 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Vérifier dans les règles officielles les valeurs de départ (PV selon la classe, stress, espoir max)
 - [ ] Cache : `?v=N` couvre `app.js`, mais `index.html` reste en cache ~10 min → très pénible pendant les tests. Trouver une vraie solution prochainement (puis à repenser une fois en PWA / service worker).
 - [ ] « Soin complet » = hack `delta 99`. Version propre possible : action `soin` qui fait `res.actuel = res.max` (bon exo sur le `switch`). Bouton pas encore stylé (exo CSS possible).
-- [ ] Dette : pas de numéro de version dans les données sauvegardées. Si la forme de l'objet change, l'ancienne sauvegarde ne collera plus.
+- [x] ~~Dette : pas de numéro de version dans les sauvegardes~~ → réglé en v9 (`VERSION_DONNEES`, `migrer()`).
+- Règle : à chaque changement de FORME d'un perso, incrémenter `VERSION_DONNEES` et ajouter une marche dans `migrer()`. Ne jamais supprimer une ancienne marche.
 - [ ] Rappel : vider les données de Chrome efface les persos → l'export JSON sera la vraie sauvegarde de secours.
 - [ ] Après la V0.1 — souhaits d'Enguy (2026-11-07) :
   - Choix de création (ascendance, communauté, classe…) figés une fois le perso validé. Garder un mode « Correction MJ » (= l'actuel ✎ Modifier) comme porte de sortie.
@@ -80,4 +82,4 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
 
 ## Prochaine étape
-Mode édition étendu aux 6 caracs et aux max des ressources (= « limites configurables »). Puis export/import JSON.
+Export/import JSON (réutiliser l'enveloppe versionnée + `migrer()` à l'import) → V0.1 terminée.

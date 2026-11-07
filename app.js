@@ -47,9 +47,51 @@ const personnagesParDefaut = [
 const CLE_SAUVEGARDE = "dhc-personnages";      // nouveau slot : toute la liste
 const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (version d'avant)
 
+// VERSION DU FORMAT DES DONNÉES (pas de l'app !).
+// À incrémenter à chaque fois que la FORME d'un perso change
+// (ex. futur passage des caracs à { base, modif }), en ajoutant
+// l'étape de conversion correspondante dans migrer().
+const VERSION_DONNEES = 1;
+
 function sauvegarder() {
-  // JSON.stringify : tableau d'objets → texte
-  localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(personnages));
+  // On ne stocke plus la liste "nue" mais une enveloppe :
+  //   { version: 1, personnages: [...] }
+  // Comme un Save Game qui écrit son propre numéro de version.
+  const enveloppe = { version: VERSION_DONNEES, personnages: personnages };
+  localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(enveloppe)); // objet → texte
+}
+
+// MIGRATION : prend des données dans n'importe quel ancien format
+// et les amène au format actuel, ÉTAPE PAR ÉTAPE (0→1, puis 1→2...).
+// Renvoie la liste de persos, ou null si les données sont inexploitables.
+// Servira aussi à l'import JSON : un vieux fichier exporté sera converti pareil.
+function migrer(donnees) {
+  // Format 0 (avant cette version) : un tableau nu, sans enveloppe.
+  if (Array.isArray(donnees)) {
+    donnees = { version: 0, personnages: donnees };
+  }
+
+  // Garde-fou : est-ce que ça ressemble à notre enveloppe ?
+  if (typeof donnees !== "object" || donnees === null || !Array.isArray(donnees.personnages)) {
+    return null;
+  }
+
+  // L'escalier des migrations. Chaque marche convertit d'UNE version.
+  // Une sauvegarde v0 passe par toutes les marches ; une v1 n'en passe aucune.
+  if (donnees.version === 0) {
+    // 0 → 1 : seule l'enveloppe change, les persos gardent leur forme.
+    donnees.version = 1;
+  }
+  // Futur exemple :
+  // if (donnees.version === 1) { ...convertir les caracs... ; donnees.version = 2; }
+
+  if (donnees.version !== VERSION_DONNEES) {
+    // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
+    console.warn("Version de données inconnue :", donnees.version);
+    return null;
+  }
+
+  return donnees.personnages;
 }
 
 // Lit un slot et renvoie l'objet, ou null si vide / illisible.
@@ -65,9 +107,22 @@ function lireSlot(cle) {
 }
 
 function charger() {
-  // 1. Cas normal : la liste a déjà été sauvegardée
-  const liste = lireSlot(CLE_SAUVEGARDE);
-  if (Array.isArray(liste)) return liste;
+  // 1. Cas normal : il y a une sauvegarde → on la migre si besoin
+  const brut = lireSlot(CLE_SAUVEGARDE);
+  if (brut !== null) {
+    const liste = migrer(brut);
+    if (liste) return liste;
+  }
+
+  // 1b. FILET DE SÉCURITÉ : une sauvegarde existe mais on n'a pas pu la lire
+  // (JSON cassé, version inconnue...). Sans ça, on repartirait des persos par
+  // défaut et le sauvegarder() du démarrage ÉCRASERAIT les vraies données.
+  // On met donc le texte brut de côté, sous une autre clé, avant de continuer.
+  const texteIllisible = localStorage.getItem(CLE_SAUVEGARDE);
+  if (texteIllisible !== null) {
+    localStorage.setItem(CLE_SAUVEGARDE + "-secours", texteIllisible);
+    console.warn("Sauvegarde illisible mise de côté sous", CLE_SAUVEGARDE + "-secours");
+  }
 
   // 2. Premier lancement de CETTE version : on part des persos par défaut...
   const nouvelleListe = structuredClone(personnagesParDefaut);
