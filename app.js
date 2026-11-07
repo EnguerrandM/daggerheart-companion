@@ -94,6 +94,42 @@ function trouverPerso(id) {
   return personnages.find((p) => p.id === id);
 }
 
+// --- 1c. CRÉER / SUPPRIMER ----------------------------------
+
+// Fabrique un perso "vierge" (= Make Struct avec des valeurs par défaut).
+// L'id doit être UNIQUE : Date.now() = nb de millisecondes depuis 1970,
+// donc deux clics ne donnent jamais le même nombre.
+function nouveauPerso() {
+  return {
+    id: "perso-" + Date.now(),
+    nom: "Nouveau perso",
+    ascendance: "?",
+    communaute: "?",
+    classe: "?",
+    niveau: 1,
+    caracs: { agility: 0, strength: 0, finesse: 0, instinct: 0, presence: 0, knowledge: 0 },
+    ressources: {
+      pv:     { actuel: 6, max: 6 },   // ⚠️ à vérifier selon la classe
+      stress: { actuel: 0, max: 6 },
+      espoir: { actuel: 2, max: 6 },
+    },
+  };
+}
+
+function ajouterPerso() {
+  const perso = nouveauPerso();
+  personnages.push(perso);   // .push = "Add" sur un Array : ajoute à la fin
+  sauvegarder();
+  return perso;
+}
+
+function supprimerPerso(id) {
+  // .filter garde tous les éléments qui vérifient la condition :
+  // ici, tous SAUF celui qui a cet id. On obtient un NOUVEAU tableau.
+  personnages = personnages.filter((p) => p.id !== id);
+  sauvegarder();
+}
+
 // --- 2. L'AFFICHAGE -----------------------------------------
 
 // Écran LISTE : un bouton par personnage.
@@ -108,7 +144,11 @@ function afficherListe() {
     </button>
   `).join("");
 
-  return `<h2>Personnages</h2>${cartes}`;
+  return `
+    <h2>Personnages</h2>
+    ${cartes}
+    <button class="ajouter" data-action="ajouter">+ Nouveau personnage</button>
+  `;
 }
 
 // Écran FICHE : la même qu'avant, avec un bouton retour en plus.
@@ -135,6 +175,7 @@ function afficherPersonnage(perso) {
       ${ligneRessource("stress", "Stress", perso.ressources.stress)}
       ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
     </article>
+    <button class="supprimer" data-action="supprimer">Supprimer ce personnage</button>
   `;
 }
 
@@ -187,6 +228,19 @@ document.getElementById("app").addEventListener("click", (event) => {
         Number(bouton.dataset.delta)
       );
       break;
+    case "ajouter":
+      persoOuvertId = ajouterPerso().id; // on ouvre directement la fiche du nouveau
+      break;
+    case "supprimer": {
+      const perso = trouverPerso(persoOuvertId);
+      // confirm() = boîte OK / Annuler du navigateur. Renvoie true ou false.
+      // Garde-fou : une suppression ne s'annule pas.
+      if (confirm(`Supprimer ${perso.nom} ? C'est définitif.`)) {
+        supprimerPerso(persoOuvertId);
+        persoOuvertId = null; // le perso n'existe plus → retour à la liste
+      }
+      break;
+    }
   }
 
   rendre(); // quelle que soit l'action : état modifié → on réaffiche
