@@ -133,7 +133,26 @@ function supprimerPerso(id) {
   sauvegarder();
 }
 
+// --- 1d. LES BORNES -----------------------------------------
+// Regroupées ici pour les retrouver facilement.
+// ⚠️ Valeurs PROVISOIRES, à vérifier dans les règles officielles.
+const BORNES = {
+  niveau: { min: 1, max: 10 },
+  carac:  { min: -5, max: 9 },
+  maxRessource: { min: 1, max: 20 },
+};
+
+// borner = Clamp : force une valeur à rester entre min et max.
+function borner(valeur, min, max) {
+  return Math.min(max, Math.max(min, valeur));
+}
+
 // --- 2. L'AFFICHAGE -----------------------------------------
+
+// Affiche +2 au lieu de 2 pour les valeurs positives (convention des JDR).
+function signe(n) {
+  return n > 0 ? `+${n}` : `${n}`;
+}
 
 // SÉCURITÉ : le texte tapé par l'utilisateur est injecté dans du HTML.
 // Un nom comme "<b>Bob" serait interprété comme une balise et casserait
@@ -199,7 +218,65 @@ function identiteEdition(perso) {
   `;
 }
 
-// Écran FICHE : identité en lecture ou en édition selon modeEdition.
+// La liste des caracs, dans l'ordre d'affichage : [clé, label].
+// Une seule liste → lecture ET édition l'utilisent, pas de doublon.
+const CARACS = [
+  ["agility", "Agility"],
+  ["strength", "Strength"],
+  ["finesse", "Finesse"],
+  ["instinct", "Instinct"],
+  ["presence", "Presence"],
+  ["knowledge", "Knowledge"],
+];
+
+const RESSOURCES = [
+  ["pv", "PV"],
+  ["stress", "Stress"],
+  ["espoir", "Espoir"],
+];
+
+// Une ligne de réglage générique : −, valeur, +.
+// action = quel "case" du switch traitera le clic ; cle = quoi modifier.
+function ligneReglage(action, cle, label, valeurAffichee) {
+  return `
+    <div class="ressource">
+      <span class="label">${label}</span>
+      <button data-action="${action}" data-cle="${cle}" data-delta="-1">−</button>
+      <span class="valeur">${valeurAffichee}</span>
+      <button data-action="${action}" data-cle="${cle}" data-delta="1">+</button>
+    </div>
+  `;
+}
+
+function caracsLecture(perso) {
+  // [cle, label] dans les paramètres = on "déballe" chaque paire (= Break Struct)
+  const lignes = CARACS.map(([cle, label]) => `<li>${label} : ${signe(perso.caracs[cle])}</li>`);
+  return `<ul>${lignes.join("")}</ul>`;
+}
+
+function caracsEdition(perso) {
+  return CARACS.map(([cle, label]) =>
+    ligneReglage("carac", cle, label, signe(perso.caracs[cle]))
+  ).join("");
+}
+
+function ressourcesLecture(perso) {
+  return `
+    ${ligneRessource("pv", "PV", perso.ressources.pv)}
+    <button data-action="ressource" data-ressource="pv" data-delta="99">Soin complet</button>
+    ${ligneRessource("stress", "Stress", perso.ressources.stress)}
+    ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
+  `;
+}
+
+// En édition, on règle le MAX de chaque ressource (= "limites configurables").
+function ressourcesEdition(perso) {
+  return RESSOURCES.map(([cle, label]) =>
+    ligneReglage("max", cle, `${label} max`, perso.ressources[cle].max)
+  ).join("");
+}
+
+// Écran FICHE : chaque bloc en lecture ou en édition selon modeEdition.
 function afficherPersonnage(perso) {
   return `
     <div class="barre">
@@ -210,20 +287,10 @@ function afficherPersonnage(perso) {
       ${modeEdition ? identiteEdition(perso) : identiteLecture(perso)}
 
       <h3>Caractéristiques</h3>
-      <ul>
-        <li>Agility : ${perso.caracs.agility}</li>
-        <li>Strength : ${perso.caracs.strength}</li>
-        <li>Finesse : ${perso.caracs.finesse}</li>
-        <li>Instinct : ${perso.caracs.instinct}</li>
-        <li>Presence : ${perso.caracs.presence}</li>
-        <li>Knowledge : ${perso.caracs.knowledge}</li>
-      </ul>
+      ${modeEdition ? caracsEdition(perso) : caracsLecture(perso)}
 
       <h3>Ressources</h3>
-      ${ligneRessource("pv", "PV", perso.ressources.pv)}
-<button data-action="ressource" data-ressource="pv" data-delta="99">Soin complet</button>
-      ${ligneRessource("stress", "Stress", perso.ressources.stress)}
-      ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
+      ${modeEdition ? ressourcesEdition(perso) : ressourcesLecture(perso)}
     </article>
     ${modeEdition ? `<button class="supprimer" data-action="supprimer">Supprimer ce personnage</button>` : ""}
   `;
@@ -245,7 +312,21 @@ function ligneRessource(cle, label, res) {
 // --- 3. LA LOGIQUE : modifier la donnée ---------------------
 function modifierRessource(perso, cle, delta) {
   const res = perso.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
-  res.actuel = Math.min(res.max, Math.max(0, res.actuel + delta)); // Clamp 0 → max
+  res.actuel = borner(res.actuel + delta, 0, res.max); // Clamp 0 → max
+  sauvegarder();
+}
+
+function modifierCarac(perso, cle, delta) {
+  perso.caracs[cle] = borner(perso.caracs[cle] + delta, BORNES.carac.min, BORNES.carac.max);
+  sauvegarder();
+}
+
+function modifierMax(perso, cle, delta) {
+  const res = perso.ressources[cle];
+  res.max = borner(res.max + delta, BORNES.maxRessource.min, BORNES.maxRessource.max);
+  // PIÈGE : si le max descend sous la valeur actuelle (6/6 → max 5),
+  // on aurait 6/5. On ramène donc l'actuel sous le nouveau max.
+  res.actuel = Math.min(res.actuel, res.max);
   sauvegarder();
 }
 
@@ -271,6 +352,12 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "retour":
       persoOuvertId = null;
       modeEdition = false;
+      break;
+    case "carac":
+      modifierCarac(trouverPerso(persoOuvertId), bouton.dataset.cle, Number(bouton.dataset.delta));
+      break;
+    case "max":
+      modifierMax(trouverPerso(persoOuvertId), bouton.dataset.cle, Number(bouton.dataset.delta));
       break;
     case "editer":
       modeEdition = !modeEdition; // ! = NOT : bascule true ↔ false (= Flip Flop)
@@ -314,7 +401,7 @@ document.getElementById("app").addEventListener("input", (event) => {
   if (champ === "niveau") {
     const n = parseInt(event.target.value, 10); // texte → nombre entier
     if (Number.isNaN(n)) return;                // champ vide pendant la frappe : on ignore
-    perso.niveau = Math.min(10, Math.max(1, n)); // Clamp 1 → 10 (⚠️ à vérifier dans les règles)
+    perso.niveau = borner(n, BORNES.niveau.min, BORNES.niveau.max);
   } else {
     perso[champ] = event.target.value;
   }
