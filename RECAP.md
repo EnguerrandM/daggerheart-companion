@@ -100,12 +100,13 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
 - [x] 2. Nombre de persos dans le titre : « Personnages (3) »
 - [x] 3. Nom vide → afficher « Sans nom » (fonction `nomAffiche(perso)` + `.trim()` + `||`)
-- [ ] 4. « Soin complet » propre : action `soin` au lieu du hack `delta 99`
-- [ ] 5. Bouton « Dupliquer » un perso
+- [x] 4. « Soin complet » propre : action `soin` + `soignerComplet(perso, cle)` (v15)
+- [x] 5. Bouton « Dupliquer » un perso : `dupliquerPerso(perso)` avec `structuredClone` (v16)
 - [ ] Bonus : trier la liste par nom
 
 Notes des exos 1-3 (2026-11-08) :
 - Pièges vus : `;` oublié en CSS (la ligne suivante saute aussi) ; `border` raccourci vs `border-color` seul ; `personnages.map.length` = nb de paramètres de map (toujours 1) ; casse des noms de variables ; portée : dans `.map((p) => …)` le perso s'appelle `p` ; passer `p.nom` au lieu de `p` à une fonction qui attend le perso ; `${objet}` affiche `[object Object]` ; parenthèse non fermée = fichier entier cassé ; `echapper()` seulement pour du HTML, pas pour `confirm()`.
+- Exos 4-5 : `switch/case` = Switch on String, `break` oublié = on enchaîne sur le case suivant ; guillemets = texte, sans = nom de variable ; `dataset` ne lit que les `data-…` (pas la class) ; accolade effacée par accident sur mobile = fichier entier cassé ; référence vs copie (`const copie = perso` = même objet, `structuredClone` = vrai Spawn, copie profonde) ; ne pas réutiliser le même nom pour original et copie ; récupérer le `return` d'une fonction.
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
