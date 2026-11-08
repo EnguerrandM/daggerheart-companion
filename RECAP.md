@@ -36,7 +36,9 @@ Tout le reste est hors périmètre pour la V0.1.
   - un seul écouteur de clic sur `#app` ; chaque bouton a un `data-action` (`ouvrir`, `retour`, `ressource`) → `switch`
   - `sauvegarder()` / `charger()` / `lireSlot()` : localStorage, clé `dhc-personnages`, JSON, try/catch. Migration : l'ancienne clé `dhc-personnage` (un seul perso) est récupérée comme 1er perso.
 - **Principe** : clic → modifier la donnée / l'état → `rendre()`. On ne touche jamais la page directement.
-- **Cache** : incrémenter `?v=N` dans `index.html` à chaque modif de `app.js`.
+- `TEXTES` (haut d'`app.js`) : TOUS les textes affichés, en anglais (= String Table). Textes à trous = petites fonctions (`titreListe(n)`). Les clés internes (`pv`, `espoir`, `data-action`…) restent en français : ce sont des identifiants.
+- `sw.js` : service worker « réseau d'abord » (`fetch` avec `cache: "no-cache"`), copie en cache `dhc-v1` pour le hors-ligne. `manifest.json` + `icones/` : app installable.
+- **Cache** : réglé par le service worker. `?v=N` gardé par prudence (incrémenter à chaque modif d'`app.js`), à retirer plus tard.
 
 ## Avancement
 ### Session 1 — 2026-11-05
@@ -73,7 +75,7 @@ Tout le reste est hors périmètre pour la V0.1.
 - [ ] Activer la double authentification (2FA) sur GitHub (via navigateur : Settings → Password and authentication)
 - [ ] Vérifier la licence du SRD Daggerheart (Darrington Press) avant d'y mettre du contenu de règles, le dépôt étant public
 - [ ] Vérifier dans les règles officielles les valeurs de départ (PV selon la classe, stress, espoir max)
-- [ ] Cache : `?v=N` couvre `app.js`, mais `index.html` reste en cache ~10 min → très pénible pendant les tests. Trouver une vraie solution prochainement (puis à repenser une fois en PWA / service worker).
+- [x] ~~Cache d'`index.html` ~10 min~~ → réglé par le service worker (V0.2 étape 1).
 - [ ] « Soin complet » = hack `delta 99`. Version propre possible : action `soin` qui fait `res.actuel = res.max` (bon exo sur le `switch`). Bouton pas encore stylé (exo CSS possible).
 - [x] ~~Dette : pas de numéro de version dans les sauvegardes~~ → réglé en v9 (`VERSION_DONNEES`, `migrer()`).
 - Règle : à chaque changement de FORME d'un perso, incrémenter `VERSION_DONNEES` et ajouter une marche dans `migrer()`. Ne jamais supprimer une ancienne marche.
@@ -84,17 +86,24 @@ Tout le reste est hors périmètre pour la V0.1.
   - Modificateur temporaire buff/debuff sur les caracs, affiché `base (modifiée)`. Stocker base et modif SÉPARÉMENT (ex. `{ base: 2, modif: -1 }`), jamais fusionnés.
   - Ascendance / communauté / classe choisies dans une liste (`<select>`) au lieu d'être tapées. Bloquants : lire la licence DPCGL (formats autorisés, mentions obligatoires) + choisir FR ou EN pour les noms. Prévoir que la liste s'agrandira (Class Packs annoncés).
   - → Pré-requis : version de schéma dans les sauvegardes (voir dette ci-dessus), à faire avant l'export JSON.
-- [ ] Après la V0.1 : manifeste + icône pour installer l'app comme une vraie appli. En attendant : Chrome ⋮ → « Ajouter à l'écran d'accueil ».
+- [x] ~~Manifeste + icône~~ → fait (V0.2 étape 1).
 
 ## Plan V0.2 (validé le 2026-11-07)
 1. PWA : manifeste + service worker « réseau d'abord » → règle le cache d'`index.html`, app installable, hors-ligne partiel.
-2. Devoirs Enguy (sans code) : lire la licence DPCGL ; choisir noms FR ou EN.
+2. Devoirs Enguy (sans code) : lire la licence DPCGL (mentions obligatoires, formats autorisés). ~~Choisir FR ou EN~~ → décidé : **EN** (noms du SRD + interface).
 3. Données de référence (classes, ascendances, communautés) dans un fichier séparé + listes déroulantes `<select>` avec option « Autre ».
 4. Écran de création → validation → identité verrouillée ; le mode ✎ devient « Correction MJ ».
 5. Modificateurs de caracs `{ base, modif }` → 1re vraie migration (v1 → v2).
-- Repoussé en V0.3 : montée de niveau.
+- Repoussé en V0.3 : montée de niveau ; traduction FR de l'interface et des listes (choix de langue par le joueur, FR/EN uniquement).
+- Décisions langue (2026-11-08) : un perso stocke un **identifiant** (`classe: "guardian"`), jamais le nom affiché ; données de référence en **un seul fichier**, une ligne par entrée avec les deux langues (`{ id, en, fr }`) ; Enguy n'a pas besoin de garder les persos actuels → pas de migration des anciens textes libres FR.
 
 **Critère de réussite V0.2** : installer l'app sur l'écran d'accueil ; créer un perso via l'écran de création avec listes ; identité verrouillée ; appliquer/retirer un debuff ; un export d'avant la V0.2 se réimporte correctement (migration).
+
+## Avancement V0.2
+### Session 5 — 2026-11-08
+- [x] Étape 1a : `manifest.json` + icônes (d12 doré, `icones/icone.svg` = source)
+- [x] Étape 1b : `sw.js` réseau d'abord ✅ testé sur téléphone : app installée, fonctionne en mode avion
+- [x] Interface passée en anglais via l'objet `TEXTES` (`?v=18`), persos par défaut en anglais (Ranger/Elf/Wildborne, Guardian/Dwarf/Underborne)
 
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
@@ -110,4 +119,4 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-Exos ci-dessus, puis V0.2 étape 1 (PWA / cache).
+Devoir DPCGL (Enguy), puis V0.2 étape 3 : fichier de données de référence `{ id, en, fr }` + `<select>` avec option « Other ».

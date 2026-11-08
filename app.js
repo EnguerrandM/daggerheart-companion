@@ -2,6 +2,71 @@
 // Daggerheart Companion — logique de l'app
 // ============================================================
 
+// --- 0. LES TEXTES DE L'INTERFACE ---------------------------
+// Tous les textes affichés à l'écran sont regroupés ICI
+// (= une String Table d'Unreal). Le code écrit TEXTES.retour
+// au lieu de "← List" en dur. Pour la traduction (V0.3), il suffira
+// d'avoir un deuxième objet comme celui-ci, en français.
+//
+// Les textes "à trous" (un nom, un nombre à insérer) sont des petites
+// FONCTIONS : (nom) => `Delete ${nom}?` (= un Format Text avec {Nom}).
+//
+// ⚠️ Seuls les TEXTES AFFICHÉS sont en anglais. Les clés internes
+// (pv, espoir, caracs, data-action...) restent telles quelles : ce sont
+// des identifiants, jamais montrés au joueur. Les changer casserait
+// les sauvegardes pour rien.
+const TEXTES = {
+  // Caracs et ressources
+  agility: "Agility",
+  strength: "Strength",
+  finesse: "Finesse",
+  instinct: "Instinct",
+  presence: "Presence",
+  knowledge: "Knowledge",
+  hp: "HP",
+  stress: "Stress",
+  hope: "Hope",
+  max: (label) => `${label} max`,
+
+  // Écran liste
+  titreListe: (n) => `Characters (${n})`,
+  niveauCourt: (n) => `Lvl ${n}`,
+  nouveauPerso: "+ New character",
+  exporter: "⬇ Export",
+  importer: "⬆ Import",
+
+  // Fiche
+  retour: "← List",
+  modifier: "✎ Edit",
+  termine: "✓ Done",
+  niveauLong: (n) => `Level ${n}`,
+  caracteristiques: "Traits",
+  ressources: "Resources",
+  soinComplet: "Full heal",
+  dupliquer: "Duplicate this character",
+  supprimer: "Delete this character",
+
+  // Champs d'édition
+  nom: "Name",
+  ascendance: "Ancestry",
+  communaute: "Community",
+  classe: "Class",
+  niveau: "Level",
+
+  // Valeurs par défaut
+  sansNom: "Unnamed",
+  nomNouveauPerso: "New character",
+  suffixeCopie: " (copy)",
+
+  // Messages (alert / confirm)
+  confirmerSuppression: (nom) => `Delete ${nom}? This cannot be undone.`,
+  jsonIllisible: "This file is not readable JSON.",
+  pasUneSauvegarde: "This file doesn't look like a Daggerheart Companion save (or it comes from a newer version).",
+  confirmerImport: (nb, nbActuels) =>
+    `Import ${nb} character(s)?\n` +
+    `This REPLACES the ${nbActuels} current character(s).`,
+};
+
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
 // Un personnage = un "objet" (= Structure Blueprint).
 // Plusieurs personnages = un "tableau" [ ... ] (= Array Blueprint) :
@@ -13,9 +78,9 @@ const personnagesParDefaut = [
   {
     id: "perso-1",          // identifiant unique : sert à retrouver LE bon perso
     nom: "Lydia",
-    ascendance: "Elfe",
-    communaute: "Sylvestre",
-    classe: "Rôdeur",
+    ascendance: "Elf",
+    communaute: "Wildborne",
+    classe: "Ranger",
     niveau: 1,
     caracs: { agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 },
     ressources: {
@@ -27,9 +92,9 @@ const personnagesParDefaut = [
   {
     id: "perso-2",
     nom: "Brom",
-    ascendance: "Nain",
-    communaute: "Souterraine",
-    classe: "Gardien",
+    ascendance: "Dwarf",
+    communaute: "Underborne",
+    classe: "Guardian",
     niveau: 1,
     caracs: { agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 },
     ressources: {
@@ -45,18 +110,18 @@ const personnagesParDefaut = [
 // ⚠️ Déclarées ICI, en haut : un `const` n'existe qu'à partir de sa ligne,
 // et charger() (plus bas) s'exécute au démarrage et en a besoin.
 const CARACS = [
-  ["agility", "Agility"],
-  ["strength", "Strength"],
-  ["finesse", "Finesse"],
-  ["instinct", "Instinct"],
-  ["presence", "Presence"],
-  ["knowledge", "Knowledge"],
+  ["agility", TEXTES.agility],
+  ["strength", TEXTES.strength],
+  ["finesse", TEXTES.finesse],
+  ["instinct", TEXTES.instinct],
+  ["presence", TEXTES.presence],
+  ["knowledge", TEXTES.knowledge],
 ];
 
 const RESSOURCES = [
-  ["pv", "PV"],
-  ["stress", "Stress"],
-  ["espoir", "Espoir"],
+  ["pv", TEXTES.hp],
+  ["stress", TEXTES.stress],
+  ["espoir", TEXTES.hope],
 ];
 
 // --- 1b. LA SAUVEGARDE : localStorage ------------------------
@@ -201,7 +266,7 @@ function trouverPerso(id) {
 function nouveauPerso() {
   return {
     id: "perso-" + Date.now(),
-    nom: "Nouveau perso",
+    nom: TEXTES.nomNouveauPerso,
     ascendance: "?",
     communaute: "?",
     classe: "?",
@@ -225,7 +290,7 @@ function ajouterPerso() {
 function dupliquerPerso(perso) {
   const copie = structuredClone(perso);
   copie.id = "perso-" + Date.now();
-  copie.nom = perso.nom + " (copie)"
+  copie.nom = perso.nom + TEXTES.suffixeCopie;
   personnages.push(copie);
   sauvegarder();
   return copie;
@@ -260,7 +325,7 @@ function signe(n) {
 }
 
 function nomAffiche(perso) {
-  return  perso.nom.trim() || "Sans nom" ;
+  return  perso.nom.trim() || TEXTES.sansNom;
 }
 
 // SÉCURITÉ : le texte tapé par l'utilisateur est injecté dans du HTML.
@@ -284,18 +349,18 @@ function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
       <strong>${echapper(nomAffiche(p))}</strong>
-      <span>${echapper(p.classe)} · ${echapper(p.ascendance)} · Niv. ${p.niveau}</span>
-      <span>PV ${p.ressources.pv.actuel}/${p.ressources.pv.max} · Stress ${p.ressources.stress.actuel}/${p.ressources.stress.max} · Espoir ${p.ressources.espoir.actuel}/${p.ressources.espoir.max}</span>
+      <span>${echapper(p.classe)} · ${echapper(p.ascendance)} · ${TEXTES.niveauCourt(p.niveau)}</span>
+      <span>${RESSOURCES.map(([cle, label]) => `${label} ${p.ressources[cle].actuel}/${p.ressources[cle].max}`).join(" · ")}</span>
     </button>
   `).join("");
 
   return `
-    <h2>Personnages (${personnages.length})</h2>
+    <h2>${TEXTES.titreListe(personnages.length)}</h2>
     ${cartes}
-    <button class="ajouter" data-action="ajouter">+ Nouveau personnage</button>
+    <button class="ajouter" data-action="ajouter">${TEXTES.nouveauPerso}</button>
     <div class="barre fichiers">
-      <button class="retour" data-action="exporter">⬇ Exporter</button>
-      <button class="retour" data-action="importer">⬆ Importer</button>
+      <button class="retour" data-action="exporter">${TEXTES.exporter}</button>
+      <button class="retour" data-action="importer">${TEXTES.importer}</button>
     </div>
   `;
 }
@@ -304,7 +369,7 @@ function afficherListe() {
 function identiteLecture(perso) {
   return `
     <h2>${echapper(nomAffiche(perso))}</h2>
-    <p>${echapper(perso.ascendance)} · ${echapper(perso.communaute)} · ${echapper(perso.classe)} · Niveau ${perso.niveau}</p>
+    <p>${echapper(perso.ascendance)} · ${echapper(perso.communaute)} · ${echapper(perso.classe)} · ${TEXTES.niveauLong(perso.niveau)}</p>
   `;
 }
 
@@ -321,11 +386,11 @@ function champTexte(perso, champ, label) {
 // Bloc identité, version ÉDITION.
 function identiteEdition(perso) {
   return `
-    ${champTexte(perso, "nom", "Nom")}
-    ${champTexte(perso, "ascendance", "Ascendance")}
-    ${champTexte(perso, "communaute", "Communauté")}
-    ${champTexte(perso, "classe", "Classe")}
-    <label class="champ">Niveau
+    ${champTexte(perso, "nom", TEXTES.nom)}
+    ${champTexte(perso, "ascendance", TEXTES.ascendance)}
+    ${champTexte(perso, "communaute", TEXTES.communaute)}
+    ${champTexte(perso, "classe", TEXTES.classe)}
+    <label class="champ">${TEXTES.niveau}
       <input type="number" inputmode="numeric" min="1" max="10" data-champ="niveau" value="${perso.niveau}">
     </label>
   `;
@@ -346,7 +411,7 @@ function ligneReglage(action, cle, label, valeurAffichee) {
 
 function caracsLecture(perso) {
   // [cle, label] dans les paramètres = on "déballe" chaque paire (= Break Struct)
-  const lignes = CARACS.map(([cle, label]) => `<li>${label} : ${signe(perso.caracs[cle])}</li>`);
+  const lignes = CARACS.map(([cle, label]) => `<li>${label}: ${signe(perso.caracs[cle])}</li>`);
   return `<ul>${lignes.join("")}</ul>`;
 }
 
@@ -358,17 +423,17 @@ function caracsEdition(perso) {
 
 function ressourcesLecture(perso) {
   return `
-    ${ligneRessource("pv", "PV", perso.ressources.pv)}
-    <button class="fillHeal" data-action="soin" >Soin complet</button>
-    ${ligneRessource("stress", "Stress", perso.ressources.stress)}
-    ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
+    ${ligneRessource("pv", TEXTES.hp, perso.ressources.pv)}
+    <button class="fillHeal" data-action="soin">${TEXTES.soinComplet}</button>
+    ${ligneRessource("stress", TEXTES.stress, perso.ressources.stress)}
+    ${ligneRessource("espoir", TEXTES.hope, perso.ressources.espoir)}
   `;
 }
 
 // En édition, on règle le MAX de chaque ressource (= "limites configurables").
 function ressourcesEdition(perso) {
   return RESSOURCES.map(([cle, label]) =>
-    ligneReglage("max", cle, `${label} max`, perso.ressources[cle].max)
+    ligneReglage("max", cle, TEXTES.max(label), perso.ressources[cle].max)
   ).join("");
 }
 
@@ -376,20 +441,20 @@ function ressourcesEdition(perso) {
 function afficherPersonnage(perso) {
   return `
     <div class="barre">
-      <button class="retour" data-action="retour">← Liste</button>
-      <button class="retour" data-action="editer">${modeEdition ? "✓ Terminé" : "✎ Modifier"}</button>
+      <button class="retour" data-action="retour">${TEXTES.retour}</button>
+      <button class="retour" data-action="editer">${modeEdition ? TEXTES.termine : TEXTES.modifier}</button>
     </div>
     <article class="fiche">
       ${modeEdition ? identiteEdition(perso) : identiteLecture(perso)}
 
-      <h3>Caractéristiques</h3>
+      <h3>${TEXTES.caracteristiques}</h3>
       ${modeEdition ? caracsEdition(perso) : caracsLecture(perso)}
 
-      <h3>Ressources</h3>
+      <h3>${TEXTES.ressources}</h3>
       ${modeEdition ? ressourcesEdition(perso) : ressourcesLecture(perso)}
     </article>
-    ${modeEdition ? `<button class="ajouter" data-action="dupliquer">Dupliquer ce personnage</button>` : ""}
-    ${modeEdition ? `<button class="supprimer" data-action="supprimer">Supprimer ce personnage</button>` : ""}
+    ${modeEdition ? `<button class="ajouter" data-action="dupliquer">${TEXTES.dupliquer}</button>` : ""}
+    ${modeEdition ? `<button class="supprimer" data-action="supprimer">${TEXTES.supprimer}</button>` : ""}
   `;
 }
 
@@ -459,20 +524,17 @@ async function importer(fichier) {
     const texte = await fichier.text(); // lecture du fichier : prend un peu de temps
     donnees = JSON.parse(texte);
   } catch (erreur) {
-    alert("Ce fichier n'est pas un JSON lisible.");
+    alert(TEXTES.jsonIllisible);
     return;
   }
 
   const liste = migrer(donnees); // même escalier que la sauvegarde locale
   if (!liste) {
-    alert("Ce fichier ne ressemble pas à une sauvegarde Daggerheart Companion (ou vient d'une version plus récente).");
+    alert(TEXTES.pasUneSauvegarde);
     return;
   }
 
-  const ok = confirm(
-    `Importer ${liste.length} personnage(s) ?\n` +
-    `Ça REMPLACE les ${personnages.length} personnage(s) actuels.`
-  );
+  const ok = confirm(TEXTES.confirmerImport(liste.length, personnages.length));
   if (!ok) return;
 
   // Filet : on garde la liste actuelle de côté avant de l'écraser.
@@ -548,7 +610,7 @@ document.getElementById("app").addEventListener("click", (event) => {
       const perso = trouverPerso(persoOuvertId);
       // confirm() = boîte OK / Annuler du navigateur. Renvoie true ou false.
       // Garde-fou : une suppression ne s'annule pas.
-      if (confirm(`Supprimer ${nomAffiche(perso)} ? C'est définitif.`)) {
+      if (confirm(TEXTES.confirmerSuppression(nomAffiche(perso)))) {
         supprimerPerso(persoOuvertId);
         persoOuvertId = null; // le perso n'existe plus → retour à la liste
         modeEdition = false;
