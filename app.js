@@ -222,6 +222,15 @@ function ajouterPerso() {
   return perso;
 }
 
+function dupliquerPerso(perso) {
+  const copie = structuredClone(perso);
+  copie.id = "perso-" + Date.now();
+  copie.nom = perso.nom + " (copie)"
+  personnages.push(copie);
+  sauvegarder();
+  return copie;
+}
+
 function supprimerPerso(id) {
   // .filter garde tous les éléments qui vérifient la condition :
   // ici, tous SAUF celui qui a cet id. On obtient un NOUVEAU tableau.
@@ -379,6 +388,7 @@ function afficherPersonnage(perso) {
       <h3>Ressources</h3>
       ${modeEdition ? ressourcesEdition(perso) : ressourcesLecture(perso)}
     </article>
+    ${modeEdition ? `<button class="ajouter" data-action="dupliquer">Dupliquer ce personnage</button>` : ""}
     ${modeEdition ? `<button class="supprimer" data-action="supprimer">Supprimer ce personnage</button>` : ""}
   `;
 }
@@ -529,6 +539,10 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "ajouter":
       persoOuvertId = ajouterPerso().id; // on ouvre directement la fiche du nouveau...
       modeEdition = true;                // ...en mode édition, pour lui donner un nom
+      break;
+    case "dupliquer":
+      persoOuvertId = dupliquerPerso(trouverPerso(persoOuvertId)).id;
+      modeEdition = true;
       break;
     case "supprimer": {
       const perso = trouverPerso(persoOuvertId);
