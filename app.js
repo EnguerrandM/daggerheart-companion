@@ -350,7 +350,7 @@ function caracsEdition(perso) {
 function ressourcesLecture(perso) {
   return `
     ${ligneRessource("pv", "PV", perso.ressources.pv)}
-    <button class="fillHeal" data-action="ressource" data-ressource="pv" data-delta="99">Soin complet</button>
+    <button class="fillHeal" data-action="soin" >Soin complet</button>
     ${ligneRessource("stress", "Stress", perso.ressources.stress)}
     ${ligneRessource("espoir", "Espoir", perso.ressources.espoir)}
   `;
@@ -400,6 +400,12 @@ function ligneRessource(cle, label, res) {
 function modifierRessource(perso, cle, delta) {
   const res = perso.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
   res.actuel = borner(res.actuel + delta, 0, res.max); // Clamp 0 → max
+  sauvegarder();
+}
+
+function soignerComplet(perso, cle, delta) {
+  const res = perso.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
+  res.actuel = res.max;
   sauvegarder();
 }
 
@@ -515,6 +521,11 @@ document.getElementById("app").addEventListener("click", (event) => {
         Number(bouton.dataset.delta)
       );
       break;
+    case "soin":
+        soignerComplet(
+        trouverPerso(persoOuvertId),"pv");
+      break;
+       
     case "ajouter":
       persoOuvertId = ajouterPerso().id; // on ouvre directement la fiche du nouveau...
       modeEdition = true;                // ...en mode édition, pour lui donner un nom
@@ -527,7 +538,7 @@ document.getElementById("app").addEventListener("click", (event) => {
         supprimerPerso(persoOuvertId);
         persoOuvertId = null; // le perso n'existe plus → retour à la liste
         modeEdition = false;
-      }
+      
       break;
     }
   }
