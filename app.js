@@ -250,6 +250,10 @@ function signe(n) {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
+function nomAffiche(perso) {
+  return  perso.nom.trim() || "Sans nom" ;
+}
+
 // SÉCURITÉ : le texte tapé par l'utilisateur est injecté dans du HTML.
 // Un nom comme "<b>Bob" serait interprété comme une balise et casserait
 // la page. echapper() remplace les caractères spéciaux par leur version
@@ -270,7 +274,7 @@ function echapper(texte) {
 function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
-      <strong>${echapper(p.nom)}</strong>
+      <strong>${echapper(nomAffiche(p.nom))}</strong>
       <span>${echapper(p.classe)} · ${echapper(p.ascendance)} · Niv. ${p.niveau}</span>
       <span>PV ${p.ressources.pv.actuel}/${p.ressources.pv.max} · Stress ${p.ressources.stress.actuel}/${p.ressources.stress.max} · Espoir ${p.ressources.espoir.actuel}/${p.ressources.espoir.max}</span>
     </button>
@@ -290,7 +294,7 @@ function afficherListe() {
 // Bloc identité, version LECTURE.
 function identiteLecture(perso) {
   return `
-    <h2>${echapper(perso.nom)}</h2>
+    <h2>${echapper(nomAffiche(perso.nom))}</h2>
     <p>${echapper(perso.ascendance)} · ${echapper(perso.communaute)} · ${echapper(perso.classe)} · Niveau ${perso.niveau}</p>
   `;
 }
