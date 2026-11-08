@@ -538,7 +538,7 @@ document.getElementById("app").addEventListener("click", (event) => {
         supprimerPerso(persoOuvertId);
         persoOuvertId = null; // le perso n'existe plus → retour à la liste
         modeEdition = false;
-      
+      }
       break;
     }
   }
