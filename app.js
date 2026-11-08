@@ -274,7 +274,7 @@ function echapper(texte) {
 function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
-      <strong>${echapper(nomAffiche(p.nom))}</strong>
+      <strong>${echapper(nomAffiche(p))}</strong>
       <span>${echapper(p.classe)} · ${echapper(p.ascendance)} · Niv. ${p.niveau}</span>
       <span>PV ${p.ressources.pv.actuel}/${p.ressources.pv.max} · Stress ${p.ressources.stress.actuel}/${p.ressources.stress.max} · Espoir ${p.ressources.espoir.actuel}/${p.ressources.espoir.max}</span>
     </button>
@@ -294,7 +294,7 @@ function afficherListe() {
 // Bloc identité, version LECTURE.
 function identiteLecture(perso) {
   return `
-    <h2>${echapper(nomAffiche(perso.nom))}</h2>
+    <h2>${echapper(nomAffiche(perso))}</h2>
     <p>${echapper(perso.ascendance)} · ${echapper(perso.communaute)} · ${echapper(perso.classe)} · Niveau ${perso.niveau}</p>
   `;
 }
@@ -523,7 +523,7 @@ document.getElementById("app").addEventListener("click", (event) => {
       const perso = trouverPerso(persoOuvertId);
       // confirm() = boîte OK / Annuler du navigateur. Renvoie true ou false.
       // Garde-fou : une suppression ne s'annule pas.
-      if (confirm(`Supprimer ${perso.nom} ? C'est définitif.`)) {
+      if (confirm(`Supprimer ${nomAffiche(perso)} ? C'est définitif.`)) {
         supprimerPerso(persoOuvertId);
         persoOuvertId = null; // le perso n'existe plus → retour à la liste
         modeEdition = false;

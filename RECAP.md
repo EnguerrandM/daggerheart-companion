@@ -97,12 +97,16 @@ Tout le reste est hors périmètre pour la V0.1.
 **Critère de réussite V0.2** : installer l'app sur l'écran d'accueil ; créer un perso via l'écran de création avec listes ; identité verrouillée ; appliquer/retirer un debuff ; un export d'avant la V0.2 se réimporte correctement (migration).
 
 ## Exos d'Enguy (avant la V0.2)
-- [ ] 1. Styler le bouton « Soin complet » (CSS + variables)
-- [ ] 2. Nombre de persos dans le titre : « Personnages (3) »
-- [ ] 3. Nom vide → afficher « Sans nom »
+- [x] 1. Styler le bouton « Soin complet » (CSS + variables)
+- [x] 2. Nombre de persos dans le titre : « Personnages (3) »
+- [x] 3. Nom vide → afficher « Sans nom » (fonction `nomAffiche(perso)` + `.trim()` + `||`)
 - [ ] 4. « Soin complet » propre : action `soin` au lieu du hack `delta 99`
 - [ ] 5. Bouton « Dupliquer » un perso
 - [ ] Bonus : trier la liste par nom
+
+Notes des exos 1-3 (2026-11-08) :
+- Pièges vus : `;` oublié en CSS (la ligne suivante saute aussi) ; `border` raccourci vs `border-color` seul ; `personnages.map.length` = nb de paramètres de map (toujours 1) ; casse des noms de variables ; portée : dans `.map((p) => …)` le perso s'appelle `p` ; passer `p.nom` au lieu de `p` à une fonction qui attend le perso ; `${objet}` affiche `[object Object]` ; parenthèse non fermée = fichier entier cassé ; `echapper()` seulement pour du HTML, pas pour `confirm()`.
+- Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
 Exos ci-dessus, puis V0.2 étape 1 (PWA / cache).
