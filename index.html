@@ -146,6 +146,14 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=16" defer></script>
+  <script src="app.js?v=17" defer></script>
+
+  <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
+       "if" : les vieux navigateurs sans service worker ignorent simplement. -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
 </body>
 </html>
