@@ -277,7 +277,7 @@ function afficherListe() {
   `).join("");
 
   return `
-    <h2>Personnages</h2>
+    <h2>Personnages (${personnages.length})</h2>
     ${cartes}
     <button class="ajouter" data-action="ajouter">+ Nouveau personnage</button>
     <div class="barre fichiers">
