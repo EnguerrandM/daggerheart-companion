@@ -54,6 +54,7 @@ const TEXTES = {
   ascendance: "Ascendance",
   communaute: "Communauté",
   classe: "Classe",
+  sousClasse: "Sous-classe",
   niveau: "Niveau",
 
   // Valeurs par défaut
@@ -82,6 +83,13 @@ const TEXTES = {
   doublon: (nom) => `« ${nom} » est déjà dans cette liste.`,
   confirmerRetrait: (nom) => `Retirer ${nom} de la liste ?`,
   titreEditionEntree: (nom) => `Modifier : ${nom}`,
+  titreNouvelleSousClasse: (classe) => `Nouvelle sous-classe de ${classe}`,
+  sousClasseDe: (classe) => `Sous-classe de ${classe}`,
+  ajouterSousClasse: "+ Sous-classe",
+  confirmerRetraitClasse: (nom, n) => `Retirer ${nom} de la liste ?` + (n > 0 ? ` Ses ${n} sous-classe(s) seront retirées aussi.` : ""),
+  choisirClasseDabord: "Choisis d'abord une classe.",
+  aucuneSousClasse: "Aucune sous-classe pour cette classe : ajoute-en dans ☰ Listes.",
+  horsListe: (v) => `${v} (hors liste)`,
   enregistrer: "✓ Enregistrer",
   annuler: "✕ Annuler",
 
@@ -137,6 +145,7 @@ const personnagesParDefaut = [
     ascendance: "",
     communaute: "",
     classe: "",
+    sousClasse: "",
     niveau: 1,
     cree: true,
     caracs: versCaracs({ agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 }),
@@ -152,6 +161,7 @@ const personnagesParDefaut = [
     ascendance: "",
     communaute: "",
     classe: "",
+    sousClasse: "",
     niveau: 1,
     cree: true,
     caracs: versCaracs({ agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 }),
@@ -194,11 +204,17 @@ const LISTES = [
   ["communautes", TEXTES.listeCommunautes],
 ];
 
-// Quel champ d'un perso se choisit dans quelle liste : [champ, liste, label].
+// Quel champ d'un perso se choisit dans quelle liste.
+// Un objet par champ (plus lisible qu'un tableau quand il y a 5 infos) :
+//   champ  = la propriété du perso         liste = la liste de référence
+//   label  = le texte affiché              autre = "Autre…" (texte libre) permis ?
+//   parent = (facultatif) champ dont dépend celui-ci : on ne propose que
+//            les entrées dont e.classe === perso.classe.
 const CHAMPS_LISTE = [
-  ["ascendance", "ascendances", TEXTES.ascendance],
-  ["communaute", "communautes", TEXTES.communaute],
-  ["classe", "classes", TEXTES.classe],
+  { champ: "ascendance", liste: "ascendances", label: TEXTES.ascendance, autre: true },
+  { champ: "communaute", liste: "communautes", label: TEXTES.communaute, autre: true },
+  { champ: "classe", liste: "classes", label: TEXTES.classe, autre: false },
+  { champ: "sousClasse", liste: "sousClasses", label: TEXTES.sousClasse, autre: false, parent: "classe" },
 ];
 
 // Valeur spéciale de l'option "Other…" dans les menus. Elle ne peut pas
@@ -220,7 +236,9 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 //   v2 : + listes (classes, ascendances, communautés saisies par le MJ)
 //   v3 : + cree sur chaque perso (false = brouillon en cours de création)
 //   v4 : chaque carac devient { base, modif } (modificateur temporaire)
-const VERSION_DONNEES = 4;
+//   v5 : + liste sousClasses (chaque entrée a un champ classe = id de sa
+//        classe) ; chaque perso reçoit sousClasse: ""
+const VERSION_DONNEES = 5;
 
 // Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
 // VERSION_DONNEES, qui ne change que quand la forme des données change.
@@ -259,7 +277,7 @@ function versCaracs(simples) {
 // { id, en, fr } (= une ligne de Data Table : un Row Name fixe + un texte
 // par langue). Elles sont VIDES dans le code : c'est le MJ qui les remplit
 // (licence : pas de contenu du SRD dans le dépôt public).
-const LISTES_VIDES = { classes: [], ascendances: [], communautes: [] };
+const LISTES_VIDES = { classes: [], ascendances: [], communautes: [], sousClasses: [] };
 
 // Fabrique l'enveloppe à écrire. Une seule fonction pour la sauvegarde
 // ET l'export : impossible que les deux formats divergent.
@@ -314,6 +332,12 @@ function migrer(donnees) {
     donnees.personnages.forEach((p) => { p.caracs = versCaracs(p.caracs); });
     donnees.version = 4;
   }
+  if (donnees.version === 4) {
+    // 4 → 5 : liste des sous-classes (vide) + champ sousClasse sur chaque perso.
+    donnees.listes.sousClasses = [];
+    donnees.personnages.forEach((p) => { p.sousClasse = ""; });
+    donnees.version = 5;
+  }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -343,7 +367,9 @@ function listesValides(l) {
     && typeof e.id === "string"
     && (typeof e.fr === "string" || typeof e.en === "string");
   return typeof l === "object" && l !== null
-    && Object.keys(LISTES_VIDES).every((cle) => Array.isArray(l[cle]) && l[cle].every(entreeOk));
+    && Object.keys(LISTES_VIDES).every((cle) => Array.isArray(l[cle]) && l[cle].every(entreeOk))
+    // Une sous-classe doit dire à quelle classe elle appartient.
+    && l.sousClasses.every((e) => typeof e.classe === "string");
 }
 
 // Vérifie qu'un perso a bien tous les morceaux dont l'affichage a besoin.
@@ -356,6 +382,7 @@ function persoValide(p) {
     && typeof p.nom === "string"
     && typeof p.niveau === "number"
     && typeof p.cree === "boolean"
+    && typeof p.sousClasse === "string"
     && estObjet(p.caracs)
     // Une carac = { base, modif }. base null est permis seulement pour un
     // brouillon (= valeur pas encore placée à la création).
@@ -471,6 +498,7 @@ function nouveauPerso() {
     ascendance: "",
     communaute: "",
     classe: "",
+    sousClasse: "",
     niveau: 1,
     cree: false,        // brouillon : la fiche s'ouvre en écran de création
     // null = pas encore placée (le MJ répartit PRESET_CARACS à la création)
@@ -555,7 +583,9 @@ function idLibre(cle, fr) {
 }
 
 // Renvoie true si l'ajout a réussi, false sinon (nom vide, doublon).
-function ajouterEntree(cle, fr, en) {
+// extra = champs en plus pour certaines listes (ex. { classe: "id" } pour
+// une sous-classe). ...extra = "étale" ses champs dans la nouvelle entrée.
+function ajouterEntree(cle, fr, en, extra = {}) {
   fr = fr.trim();
   en = en.trim();
   if (!fr) {
@@ -566,7 +596,7 @@ function ajouterEntree(cle, fr, en) {
     alert(TEXTES.doublon(fr));
     return false;
   }
-  listes[cle].push({ id: idLibre(cle, fr), fr: fr, en: en });
+  listes[cle].push({ id: idLibre(cle, fr), fr: fr, en: en, ...extra });
   sauvegarder();
   return true;
 }
@@ -597,6 +627,11 @@ function modifierEntree(cle, id, fr, en) {
 
 function retirerEntree(cle, id) {
   listes[cle] = listes[cle].filter((e) => e.id !== id);
+  // Retirer une classe retire aussi ses sous-classes (en cascade) :
+  // sinon elles resteraient orphelines, invisibles dans ☰ Listes.
+  if (cle === "classes") {
+    listes.sousClasses = listes.sousClasses.filter((e) => e.classe !== id);
+  }
   sauvegarder();
 }
 
@@ -660,14 +695,33 @@ function preparerBrouillon(perso) {
   }
 }
 
+// Les entrées proposées pour un champ : toute la liste, ou seulement
+// celles rattachées au parent (les sous-classes de la classe choisie).
+// .filter = garder les éléments qui vérifient la condition.
+function entreesPour(perso, c) {
+  const toutes = listes[c.liste];
+  if (!c.parent) return toutes;
+  return toutes.filter((e) => e.classe === perso[c.parent]);
+}
+
+// Le choix actuel est-il acceptable pour valider ?
+//   - champ avec "Autre…" : n'importe quel texte non vide ;
+//   - champ sans "Autre…" : un id qui existe dans les entrées proposées.
+function choixValide(perso, c) {
+  const valeur = perso[c.champ];
+  if (estVide(valeur)) return false;
+  if (c.autre) return true;
+  return entreesPour(perso, c).some((e) => e.id === valeur);
+}
+
 // Ce qui manque pour valider un brouillon. Renvoie la liste des labels
 // manquants (tableau vide = tout est bon).
 function champsManquants(perso) {
   const manquants = [];
   if (!perso.nom.trim()) manquants.push(TEXTES.nom);
   if (reserve(perso).length > 0) manquants.push(TEXTES.caracteristiques);
-  CHAMPS_LISTE.forEach(([champ, , label]) => {   // la virgule seule = "on saute la 2e valeur"
-    if (estVide(perso[champ])) manquants.push(label);
+  CHAMPS_LISTE.forEach((c) => {
+    if (!choixValide(perso, c)) manquants.push(c.label);
   });
   return manquants;
 }
@@ -765,11 +819,20 @@ function afficherAPropos() {
 // "✕ Annuler" n'a donc rien à défaire, il suffit de quitter l'écran.
 // (Cet écran accueillera les capacités à l'étape 3.)
 function afficherEditionEntree() {
-  const { cle, id } = entreeEditee;
-  const e = trouverEntree(cle, id);
+  const { cle, id, classe } = entreeEditee;
+  // id null = on CRÉE une entrée (une sous-classe), sinon on la modifie.
+  const e = id ? trouverEntree(cle, id) : { fr: "", en: "", classe: classe };
+  const titre = id
+    ? TEXTES.titreEditionEntree(echapper(nomEntree(e)))
+    : TEXTES.titreNouvelleSousClasse(echapper(nomChoix("classes", classe)));
+  // Pour une sous-classe existante, on rappelle sa classe sous le titre.
+  const sousTitre = id && cle === "sousClasses"
+    ? `<p class="aide">${TEXTES.sousClasseDe(echapper(nomChoix("classes", e.classe)))}</p>`
+    : "";
   return `
     <button class="retour" data-action="listes">${TEXTES.annuler}</button>
-    <h2>${TEXTES.titreEditionEntree(echapper(nomEntree(e)))}</h2>
+    <h2>${titre}</h2>
+    ${sousTitre}
     <article class="fiche">
       <label class="champ">${TEXTES.nomFr}
         <input type="text" id="edition-fr" value="${echapper(e.fr || "")}">
@@ -782,23 +845,46 @@ function afficherEditionEntree() {
   `;
 }
 
+// [...tableau] = une COPIE, qu'on trie pour l'affichage sans toucher
+// à l'ordre stocké. localeCompare = comparaison alphabétique propre.
+function trier(entrees) {
+  return [...entrees].sort((a, b) => nomEntree(a).localeCompare(nomEntree(b)));
+}
+
+// Une ligne d'entrée : nom (+ nom anglais), boutons ✎ et ✕.
+// classeEnPlus = classe CSS en plus ("sous-entree" pour le décalage).
+function ligneEntree(cle, e, classeEnPlus) {
+  return `
+    <li class="entree ${classeEnPlus}">
+      <span>${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}</span>
+      <span class="boutons-entree">
+        <button class="editer" data-action="editer-entree" data-cle="${cle}" data-id="${e.id}">✎</button>
+        <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
+      </span>
+    </li>
+  `;
+}
+
+// Sous une classe : ses sous-classes (décalées) + un bouton pour en ajouter.
+// Dans les DONNÉES, les sous-classes sont une liste à part (avec un champ
+// classe) ; c'est seulement l'AFFICHAGE qui les range sous leur classe.
+function sousClassesDe(classe) {
+  const sous = trier(listes.sousClasses.filter((s) => s.classe === classe.id));
+  return sous.map((s) => ligneEntree("sousClasses", s, "sous-entree")).join("") + `
+    <li class="sous-entree">
+      <button class="petit-ajout" data-action="nouvelle-sous-classe" data-classe="${classe.id}">${TEXTES.ajouterSousClasse}</button>
+    </li>
+  `;
+}
+
 // Écran GESTION DES LISTES : pour chaque liste, ses entrées + un mini
 // formulaire d'ajout. Chaque champ a un id unique (nouveau-fr-classes...)
 // pour qu'au clic sur "+ Add" on sache lequel lire.
 function afficherGestionListes() {
   const blocs = LISTES.map(([cle, titre]) => {
-    // [...tableau] = une COPIE, qu'on trie pour l'affichage sans toucher
-    // à l'ordre stocké. localeCompare = comparaison alphabétique propre.
-    const triees = [...listes[cle]].sort((a, b) => nomEntree(a).localeCompare(nomEntree(b)));
-    const lignes = triees.map((e) => `
-      <li class="entree">
-        <span>${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}</span>
-        <span class="boutons-entree">
-          <button class="editer" data-action="editer-entree" data-cle="${cle}" data-id="${e.id}">✎</button>
-          <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
-        </span>
-      </li>
-    `).join("");
+    const lignes = trier(listes[cle]).map((e) =>
+      ligneEntree(cle, e, "") + (cle === "classes" ? sousClassesDe(e) : "")
+    ).join("");
 
     return `
       <article class="fiche bloc-liste">
@@ -826,7 +912,7 @@ function afficherGestionListes() {
 function identiteLecture(perso) {
   return `
     <h2>${echapper(nomAffiche(perso))}</h2>
-    <p>${CHAMPS_LISTE.map(([champ, cleListe]) => echapper(nomChoix(cleListe, perso[champ]))).join(" · ")} · ${TEXTES.niveauLong(perso.niveau)}</p>
+    <p>${CHAMPS_LISTE.map((c) => echapper(nomChoix(c.liste, perso[c.champ]))).join(" · ")} · ${TEXTES.niveauLong(perso.niveau)}</p>
   `;
 }
 
@@ -840,32 +926,58 @@ function champTexte(perso, champ, label) {
   `;
 }
 
-// Un menu déroulant (<select>) rempli depuis une liste, + "Other…".
+// Un menu déroulant (<select>) rempli depuis une liste, + "Autre…" si permis.
 // data-choix = quel champ du perso ce menu modifie (comme data-champ).
-// Si "Other…" est choisi, un champ texte libre apparaît dessous.
-function champChoix(perso, champ, cleListe, label) {
+// Si "Autre…" est choisi, un champ texte libre apparaît dessous.
+// c = une ligne de CHAMPS_LISTE.
+function champChoix(perso, c) {
+  const { champ, liste, label } = c;   // déstructuration = Break Struct
   const valeur = perso[champ];
-  const entree = trouverEntree(cleListe, valeur);
-  // On est en "Other…" si le MJ vient de le choisir, OU si la valeur
-  // est un texte qui ne correspond à aucune entrée de la liste.
-  const autre = champsAutre.has(champ) || (!estVide(valeur) && !entree);
 
-  const triees = [...listes[cleListe]].sort((a, b) => nomEntree(a).localeCompare(nomEntree(b)));
+  // Sous-classe sans classe choisie : rien à proposer.
+  if (c.parent && estVide(perso[c.parent])) {
+    return `
+      <label class="champ">${label}
+        <select disabled><option>${TEXTES.choisir}</option></select>
+        <span class="aide">${TEXTES.choisirClasseDabord}</span>
+      </label>
+    `;
+  }
+
+  const proposees = entreesPour(perso, c);
+  const entree = proposees.find((e) => e.id === valeur);
+  // Valeur ni vide ni dans la liste : ancien texte libre, ou entrée retirée.
+  const horsListe = !estVide(valeur) && !entree;
+  // On est en "Autre…" si le MJ vient de le choisir, OU si la valeur est
+  // un texte hors liste ET que ce champ accepte le texte libre.
+  const autre = c.autre && (champsAutre.has(champ) || horsListe);
+
+  const triees = [...proposees].sort((a, b) => nomEntree(a).localeCompare(nomEntree(b)));
   // selected = l'option affichée par défaut. ${cond ? "selected" : ""}
   // n'écrit le mot que pour la bonne option.
   const options = triees.map((e) =>
     `<option value="${e.id}" ${entree === e ? "selected" : ""}>${echapper(nomEntree(e))}</option>`
   ).join("");
+  // Champ SANS "Autre…" qui contient quand même un texte hors liste (vieux
+  // perso) : on l'affiche tel quel pour ne pas le perdre en silence.
+  // Il ne sera pas accepté à la validation : il faudra choisir dans la liste.
+  const optionHorsListe = horsListe && !c.autre
+    ? `<option value="${echapper(valeur)}" selected>${echapper(TEXTES.horsListe(nomChoix(liste, valeur)))}</option>`
+    : "";
+
+  let aide = "";
+  if (triees.length === 0) aide = c.parent ? TEXTES.aucuneSousClasse : TEXTES.listeVideAide;
 
   return `
     <label class="champ">${label}
       <select data-choix="${champ}">
-        <option value="" ${!entree && !autre ? "selected" : ""}>${TEXTES.choisir}</option>
+        <option value="" ${!entree && !autre && !horsListe ? "selected" : ""}>${TEXTES.choisir}</option>
         ${options}
-        <option value="${VALEUR_AUTRE}" ${autre ? "selected" : ""}>${TEXTES.autre}</option>
+        ${optionHorsListe}
+        ${c.autre ? `<option value="${VALEUR_AUTRE}" ${autre ? "selected" : ""}>${TEXTES.autre}</option>` : ""}
       </select>
       ${autre ? `<input type="text" data-champ="${champ}" placeholder="${TEXTES.saisieLibre}" value="${echapper(estVide(valeur) ? "" : valeur)}">` : ""}
-      ${triees.length === 0 ? `<span class="aide">${TEXTES.listeVideAide}</span>` : ""}
+      ${aide ? `<span class="aide">${aide}</span>` : ""}
     </label>
   `;
 }
@@ -874,7 +986,7 @@ function champChoix(perso, champ, cleListe, label) {
 function identiteEdition(perso) {
   return `
     ${champTexte(perso, "nom", TEXTES.nom)}
-    ${CHAMPS_LISTE.map(([champ, cleListe, label]) => champChoix(perso, champ, cleListe, label)).join("")}
+    ${CHAMPS_LISTE.map((c) => champChoix(perso, c)).join("")}
     <label class="champ">${TEXTES.niveau}
       <input type="number" inputmode="numeric" min="1" max="10" data-champ="niveau" value="${perso.niveau}">
     </label>
@@ -1136,7 +1248,10 @@ function rendre() {
   }
   // Filet : si l'entrée a disparu (ex. import entre-temps), on revient aux listes.
   if (ecran === "entree") {
-    if (entreeEditee && trouverEntree(entreeEditee.cle, entreeEditee.id)) {
+    const existe = entreeEditee && (entreeEditee.id
+      ? trouverEntree(entreeEditee.cle, entreeEditee.id)
+      : trouverEntree("classes", entreeEditee.classe));   // création : la classe parente doit exister
+    if (existe) {
       zone.innerHTML = afficherEditionEntree();
       return;
     }
@@ -1214,12 +1329,21 @@ document.getElementById("app").addEventListener("click", (event) => {
       ecran = "entree";
       entreeEditee = { cle: bouton.dataset.cle, id: bouton.dataset.id };
       break;
+    case "nouvelle-sous-classe":
+      ecran = "entree";
+      entreeEditee = { cle: "sousClasses", id: null, classe: bouton.dataset.classe };
+      break;
     case "enregistrer-entree": {
       const fr = document.getElementById("edition-fr").value;
       const en = document.getElementById("edition-en").value;
+      const { cle, id, classe } = entreeEditee;
+      // id null = création (sous-classe), sinon modification.
+      const ok = id
+        ? modifierEntree(cle, id, fr, en)
+        : ajouterEntree(cle, fr, en, { classe: classe });
       // En cas d'erreur (nom vide, doublon), on RESTE sur l'écran
       // (sans rendre(), pour ne pas effacer ce qui a été tapé).
-      if (!modifierEntree(entreeEditee.cle, entreeEditee.id, fr, en)) return;
+      if (!ok) return;
       ecran = "listes";
       entreeEditee = null;
       break;
@@ -1240,7 +1364,10 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "retirer-entree": {
       const cle = bouton.dataset.cle;
       const entree = listes[cle].find((e) => e.id === bouton.dataset.id);
-      if (entree && confirm(TEXTES.confirmerRetrait(nomEntree(entree)))) {
+      const message = cle === "classes"
+        ? TEXTES.confirmerRetraitClasse(nomEntree(entree || {}), listes.sousClasses.filter((sc) => sc.classe === bouton.dataset.id).length)
+        : TEXTES.confirmerRetrait(nomEntree(entree || {}));
+      if (entree && confirm(message)) {
         retirerEntree(cle, entree.id);
       }
       break;
@@ -1367,8 +1494,14 @@ document.getElementById("app").addEventListener("change", (event) => {
     perso[champ] = "";        // le MJ va taper son texte dans le champ libre
   } else {
     champsAutre.delete(champ);
-    perso[champ] = valeur;    // un id de la liste, ou "" pour "— Choose —"
+    perso[champ] = valeur;    // un id de la liste, ou "" pour "— Choisir —"
   }
+  // Les champs qui DÉPENDENT de celui-ci (la sous-classe dépend de la
+  // classe) sont remis à vide : l'ancienne sous-classe n'appartient
+  // plus à la nouvelle classe.
+  CHAMPS_LISTE.forEach((c) => {
+    if (c.parent === champ) perso[c.champ] = "";
+  });
   sauvegarder();
   rendre();
 });

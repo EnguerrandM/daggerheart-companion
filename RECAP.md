@@ -175,9 +175,15 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
 ### Session 7 — 2026-11-09
 - [x] Étape 1 (`?v=30`) : modifier une entrée de liste. Bouton ✎ → écran `ecran = "entree"` (état `entreeEditee = { cle, id }`), rien n'est sauvegardé avant « ✓ Enregistrer » (« ✕ Annuler » = juste quitter). **L'id ne change jamais** (= Row Name d'une Data Table) → renommer met à jour tous les persos. Doublons détectés par **nom** normalisé (`nomPris`), plus par id ; `idLibre()` fabrique `orc-2` si `orc` est déjà pris (cas : « Orc » renommé « Ogre » puis nouvel « Orc »). En cas d'erreur (vide/doublon), le texte tapé reste. Testé en simulation.
 - [x] Numéro de build dans « À propos » (`?v=31`) : `BUILD` est LU depuis `document.currentScript.src` (le `?v=N`), pas recopié → une seule source de vérité. `VERSION_APP = "0.3-dev"`. Rappel : après un push, GitHub Pages met 1-2 min ; fermer/rouvrir l'app, vérifier le build dans À propos.
+- [x] Étape 2 (`?v=32`) : sous-classes. Choix d'Enguy : **plus de « Autre… » pour la classe** (ni la sous-classe) ; dans ☰ Listes, sous-classes **affichées sous leur classe** (décalées) avec un bouton « + Sous-classe » par classe.
+  - Données : liste à part `listes.sousClasses`, entrées `{ id, fr, en, classe }` ; c'est l'affichage seul qui les range sous leur classe. Sauvegarde **v5** (migration 4 → 5 : liste vide + `sousClasse: ""` sur chaque perso).
+  - « + Sous-classe » ouvre l'écran d'entrée en mode création (`entreeEditee.id = null`, `classe` = parent) → cet écran servira aussi à saisir les capacités. `ajouterEntree(cle, fr, en, extra)` avec `...extra` (spread).
+  - `CHAMPS_LISTE` passe en objets `{ champ, liste, label, autre, parent }`. `entreesPour()` filtre les sous-classes par la classe du perso ; `choixValide()` : sans « Autre », la valeur doit être un id de la liste proposée. Changer de classe vide la sous-classe (champs dont `parent` = le champ modifié). Sous-classe obligatoire pour valider.
+  - Retirer une classe retire ses sous-classes (cascade, confirmation qui le dit). Vieux perso avec une classe en texte libre : affichée « … (hors liste) » en correction MJ, pas perdue en silence, mais à remplacer par une classe de la liste.
+  - Testé en simulation (migration v4 → v5, ajout, doublon, filtre, reset, validation, cascade, hors liste).
 
 ## Prochaine étape
-**V0.3 — étape 2 : sous-classes** (voir Plan V0.3). Ancien cadrage :
+**V0.3 — étape 3 : capacités sur les entrées** (voir Plan V0.3). Ancien cadrage :
 - Capacités d'ascendance (2) et de communauté (1) rattachées aux entrées des listes, saisies par Enguy.
 - Cartes de domaine : domaines (2 par classe), cartes saisies par Enguy (nom, domaine, niveau, coût, texte avec ses mots), 2 cartes choisies à la création.
 - Vue « deck » sur la fiche : swipe (CSS `scroll-snap`) + boutons ◀ ▶.

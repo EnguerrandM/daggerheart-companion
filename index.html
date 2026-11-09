@@ -140,6 +140,16 @@
     }
     .entree .secondaire { color: var(--texte-doux); font-size: 0.9rem; }
     .boutons-entree { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .sous-entree { margin-left: 1.25rem; }   /* sous-classes décalées sous leur classe */
+    li.sous-entree:not(.entree) { list-style: none; padding: 0.4rem 0; border-bottom: 1px solid var(--bordure); }
+    .petit-ajout {
+      padding: 0.3rem 0.8rem;
+      border: 1px dashed var(--or);
+      border-radius: 8px;
+      background: none;
+      color: var(--or);
+      font-size: 0.9rem;
+    }
     .entree button {
       width: 2.5rem;
       height: 2.5rem;
@@ -218,7 +228,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=31" defer></script>
+  <script src="app.js?v=32" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
