@@ -36,7 +36,7 @@ Tout le reste est hors périmètre pour la V0.1.
   - un seul écouteur de clic sur `#app` ; chaque bouton a un `data-action` (`ouvrir`, `retour`, `ressource`) → `switch`
   - `sauvegarder()` / `charger()` / `lireSlot()` : localStorage, clé `dhc-personnages`, JSON, try/catch. Migration : l'ancienne clé `dhc-personnage` (un seul perso) est récupérée comme 1er perso.
 - **Principe** : clic → modifier la donnée / l'état → `rendre()`. On ne touche jamais la page directement.
-- `TEXTES` (haut d'`app.js`) : TOUS les textes affichés, en anglais (= String Table). Textes à trous = petites fonctions (`titreListe(n)`). Les clés internes (`pv`, `espoir`, `data-action`…) restent en français : ce sont des identifiants.
+- `TEXTES` (haut d'`app.js`) : TOUS les textes affichés, en **français** depuis le 2026-11-09 (= String Table). Textes à trous = petites fonctions (`titreListe(n)`). Les clés internes (`pv`, `espoir`, `data-action`…) restent en français : ce sont des identifiants.
 - `sw.js` : service worker « réseau d'abord » (`fetch` avec `cache: "no-cache"`), copie en cache `dhc-v1` pour le hors-ligne. `manifest.json` + `icones/` : app installable.
 - **Cache** : réglé par le service worker. `?v=N` gardé par prudence (incrémenter à chaque modif d'`app.js`), à retirer plus tard.
 
@@ -94,7 +94,12 @@ Tout le reste est hors périmètre pour la V0.1.
 3. ~~Fichier de référence dans le dépôt~~ → **listes LOCALES** (classes, ascendances, communautés) saisies par le MJ dans un écran de gestion (ajouter/supprimer), stockées en localStorage + incluses dans l'export JSON. Les `<select>` se remplissent depuis ces listes, avec option « Other ». Aucun contenu SRD dans le dépôt tant que Darrington Press n'a pas répondu. Si feu vert : on livrera une liste officielle en plus.
 4. Écran de création → validation → identité verrouillée ; le mode ✎ devient « Correction MJ ».
 5. Modificateurs de caracs `{ base, modif }` → migration v3 → v4 (v2 = listes, v3 = brouillons).
-- Repoussé en V0.3 : montée de niveau ; traduction FR de l'interface et des listes (choix de langue par le joueur, FR/EN uniquement).
+- Plan révisé (2026-11-09) :
+  - **V0.2** : 4b preset de caracs → 5 modificateurs buff/debuff → écran About → critère de réussite.
+  - **V0.3** : capacités. Ascendance = 2 capacités, communauté = 1 (vérifié SRD), saisies par Enguy dans les listes. Cartes de domaine : chaque classe a 2 domaines, 2 cartes choisies à la création (vérifié SRD). Vue « deck » sur la fiche, swipe gauche/droite (CSS `scroll-snap`) + boutons ◀ ▶. Cartes saisies à la main par Enguy, avec ses mots.
+  - **V0.4** : ajout de l'anglais (choix de langue).
+  - Plus tard : montée de niveau. **Pas de multiclassage** avant longtemps.
+- Preset de caracs (vérifié SRD) : +2, +1, +1, +0, +0, −1 à répartir. Interface prévue : un menu par carac ; choisir une valeur déjà prise **échange** les deux → répartition toujours valide. Uniquement à la création ; la correction MJ garde les +/− libres.
 - Décisions langue (2026-11-08) : un perso stocke un **identifiant** (`classe: "guardian"`), jamais le nom affiché ; données de référence en **un seul fichier**, une ligne par entrée avec les deux langues (`{ id, en, fr }`) ; Enguy n'a pas besoin de garder les persos actuels → pas de migration des anciens textes libres FR.
 
 **Critère de réussite V0.2** : installer l'app sur l'écran d'accueil ; créer un perso via l'écran de création avec listes ; identité verrouillée ; appliquer/retirer un debuff ; un export d'avant la V0.2 se réimporte correctement (migration).
@@ -103,6 +108,7 @@ Tout le reste est hors périmètre pour la V0.1.
 - DPCGL 2.0 lue : les applis/sites ne sont PAS dans les « Permitted Formats » ; l'usage privé entre amis n'est pas une « diffusion ». Traduire ne change rien (traduction = Adaptive Content).
 - Enguy envoie un mail à info@darringtonpress.com (brouillon fait le 2026-11-08) pour demander si une appli gratuite est acceptée. En attente de réponse.
 - En attendant : dépôt public, **aucun nom tiré du SRD dans le code** (pas de synonymes non plus). Noms de caracs/ressources (Agility, HP, Stress, Hope…) gardés : génériques, risque jugé faible (supposition).
+- Règle : **le code est public, le contenu reste privé.** Les listes et cartes saisies par Enguy (même reformulées : une reformulation reste du contenu dérivé) vivent dans le localStorage et ses exports JSON, jamais dans le dépôt.
 - Prévu : écran « About » avec la mention 4.1 + avertissement de non-affiliation (comme FreshCutGrass, Daggerheart Brews…).
 - Plan B si refus : dépôt privé (gratuit) + Cloudflare Pages + Cloudflare Access (gratuit ≤ 50 utilisateurs, connexion par code email). Pièges : configurer Access sur *.pages.dev (pas seulement les previews) ; le service worker risque de mettre en cache la page de login → adapter sw.js. GitHub Pro (4 $/mois) ne sert à rien : le site resterait public.
 - Icône d12 générée par IA (Claude) : Enguy pourra la refaire lui-même (contexte : Critical Role publiquement hostile à l'art généré par IA).
@@ -128,6 +134,7 @@ Tout le reste est hors périmètre pour la V0.1.
   - En mode jeu : identité + caracs en lecture seule ; seuls les +/− de ressources et Full heal restent. Sortir de GM fix ne demande pas de confirmation. Testé en simulation (migrations v1/v2 → v3, création, refus, brouillon, confirmation).
   - « Dupliquer » ouvre la copie en édition sans confirmation (assumé : on vient de la créer).
 - [x] Correctif (`?v=24`, retour d'Enguy) : en GM fix, « ← List » gardait les modifs (sauvegarde à la frappe) → remplacé par « ✕ Cancel ». Snapshot `copieAvantCorrection` (`structuredClone`) pris en entrant en GM fix (et après Dupliquer) ; Cancel le remet à la même place (`findIndex`). « ✓ Done » garde les modifs. Limite : fermer l'app en pleine correction garde les modifs déjà tapées.
+- [x] **Retour au français** (`?v=25`, décision d'Enguy) : le contenu (listes, futures cartes) est saisi par Enguy en français avec ses propres mots, donc l'interface repasse en FR (`TEXTES`, `lang="fr"`, manifeste). Listes : nom **FR obligatoire**, nom EN facultatif (servira à relier à l'officiel anglais si autorisation). Id fabriqué depuis le nom FR. `nomEntree(e)` = `e.fr || e.en` → les entrées créées en anglais restent valides, pas de migration. Noms des caracs traduits maison (Agilité, Force, Finesse, Instinct, Présence, Savoir) : à comparer avec une éventuelle VF officielle.
 
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
@@ -143,4 +150,4 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-V0.2 étape 5 : modificateurs de caracs `{ base, modif }` → migration v3 → v4. Puis écran « About » (mention DPCGL), puis vérification du critère de réussite V0.2.
+V0.2 étape 4b : preset de caracs à la création (échange). Puis étape 5 (modificateurs `{ base, modif }`, migration v3 → v4), écran « About », critère de réussite V0.2.
