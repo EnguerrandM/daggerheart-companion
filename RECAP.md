@@ -1,4 +1,4 @@
-# RECAP — Daggerheart Companion
+# RECAP — Duality Companion (ex-Daggerheart Companion)
 
 Source de vérité sur l'avancement du projet. Mis à jour en fin de session.
 
@@ -141,7 +141,8 @@ Tout le reste est hors périmètre pour la V0.1.
   - Sauvegarde **v4** : chaque carac = `{ base, modif }`, jamais fusionnés. `versCaracs()` convertit (persos par défaut, nouveaux persos, migration 3 → 4). `persoValide()` vérifie la nouvelle forme (base `null` permise pour un brouillon). Correction MJ = règle la BASE ; la création place la BASE. `BORNES.modif` −5 → +5 (provisoire). `caracsLecture()` supprimée (remplacée par `caracsJeu()`). Testé en simulation : migrations v0/v3 → v4 (y compris brouillon), buff, debuff, retrait, correction MJ, création.
   - Note : une `function` est utilisable avant sa ligne (hoisting), pas un `const` → c'est pour ça que `personnagesParDefaut` peut appeler `versCaracs()`.
 - [x] Écran « ⓘ À propos » (`?v=28`) : version de l'app (`VERSION_APP = "0.2"`, distincte de `VERSION_DONNEES`), présentation, rappel « données locales → exporte », avertissement de non-affiliation + marque, crédits (Enguy ; code avec l'aide de Claude, IA), lien vers le dépôt. État d'écran unifié : `ecran = null | "listes" | "apropos"` (remplace le booléen `ecranListes`).
-- Décision : **pas de mention DPCGL 4.1 pour l'instant** (remarque d'Enguy, validée) : l'app ne contient presque rien du SRD, et la mention reviendrait à revendiquer une licence qui ne couvre pas les applis. À ajouter si Darrington Press donne son accord. Question à poser dans le mail : utiliser « Daggerheart » dans le nom de l'app.
+- Décision : **pas de mention DPCGL 4.1 pour l'instant** (remarque d'Enguy, validée) : l'app ne contient presque rien du SRD, et la mention reviendrait à revendiquer une licence qui ne couvre pas les applis. À ajouter si Darrington Press donne son accord. ~~Question à poser dans le mail : utiliser « Daggerheart » dans le nom de l'app.~~
+- [x] **Nouveau nom : Duality Companion** (`?v=29`, choix d'Enguy) pour ne plus utiliser la marque dans le nom. Changé : `<title>`, `<h1>`, manifeste (`name`, `short_name: "Duality"`), À propos (+ « Compatible avec le jeu de rôle Daggerheart »), nom des exports (`duality-companion-AAAA-MM-JJ.json`). Volontairement inchangés : nom du dépôt / adresse du site (renommer = nouvelle URL + réinstaller l'app ; données a priori conservées car le localStorage dépend du domaine, à vérifier + exporter avant) et clés localStorage `dhc-…` (les changer perdrait les sauvegardes). Recherche rapide : aucune appli JDR nommée « Duality Companion ».
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
 - [x] 2. Nombre de persos dans le titre : « Personnages (3) »

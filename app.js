@@ -1,5 +1,7 @@
 // ============================================================
-// Daggerheart Companion — logique de l'app
+// Duality Companion — logique de l'app
+// (dépôt GitHub encore nommé daggerheart-companion ; les clés localStorage
+// gardent le préfixe "dhc-" exprès : les renommer perdrait les sauvegardes)
 // ============================================================
 
 // --- 0. LES TEXTES DE L'INTERFACE ---------------------------
@@ -61,7 +63,7 @@ const TEXTES = {
   // Messages (alert / confirm)
   confirmerSuppression: (nom) => `Supprimer ${nom} ? C'est définitif.`,
   jsonIllisible: "Ce fichier n'est pas un JSON lisible.",
-  pasUneSauvegarde: "Ce fichier ne ressemble pas à une sauvegarde Daggerheart Companion (ou vient d'une version plus récente).",
+  pasUneSauvegarde: "Ce fichier ne ressemble pas à une sauvegarde Duality Companion (ou vient d'une version plus récente).",
   confirmerImport: (nb, nbActuels) =>
     `Importer ${nb} personnage(s) ?\n` +
     `Ça REMPLACE les ${nbActuels} personnage(s) actuels et tes listes.`,
@@ -106,7 +108,7 @@ const TEXTES = {
   boutonAPropos: "ⓘ À propos",
   titreAPropos: "À propos",
   version: (v) => `Version ${v}`,
-  presentation: "Application de fan, gratuite et sans publicité, pour gérer les fiches de personnages de Daggerheart à la table.",
+  presentation: "Application de fan, gratuite et sans publicité, pour gérer les fiches de personnages à la table. Compatible avec le jeu de rôle Daggerheart.",
   titreDonnees: "Tes données",
   donnees: "Tout reste sur cet appareil (aucun compte, aucun serveur). Vider les données du navigateur efface tes personnages et tes listes : fais régulièrement un ⬇ Exporter pour garder une sauvegarde.",
   titreAvertissement: "Avertissement",
@@ -677,7 +679,7 @@ function afficherAPropos() {
     <button class="retour" data-action="retour">${TEXTES.retour}</button>
     <h2>${TEXTES.titreAPropos}</h2>
     <article class="fiche texte">
-      <p><strong>Daggerheart Companion</strong> · ${TEXTES.version(VERSION_APP)}</p>
+      <p><strong>Duality Companion</strong> · ${TEXTES.version(VERSION_APP)}</p>
       <p>${TEXTES.presentation}</p>
       <h3>${TEXTES.titreDonnees}</h3>
       <p>${TEXTES.donnees}</p>
@@ -993,7 +995,7 @@ function exporter() {
   const url = URL.createObjectURL(blob);
   const lien = document.createElement("a");
   lien.href = url;
-  lien.download = `daggerheart-${new Date().toISOString().slice(0, 10)}.json`; // ex. daggerheart-2026-11-07.json
+  lien.download = `duality-companion-${new Date().toISOString().slice(0, 10)}.json`; // ex. daggerheart-2026-11-07.json
   lien.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000); // libère la mémoire un peu après
 }

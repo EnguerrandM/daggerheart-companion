@@ -1,7 +1,7 @@
 {
-  "name": "Daggerheart Companion",
-  "short_name": "Daggerheart",
-  "description": "Fiches de personnages pour le JDR Daggerheart",
+  "name": "Duality Companion",
+  "short_name": "Duality",
+  "description": "Fiches de personnages, compatible avec le JDR Daggerheart",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
