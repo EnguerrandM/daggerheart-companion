@@ -5,93 +5,95 @@
 // --- 0. LES TEXTES DE L'INTERFACE ---------------------------
 // Tous les textes affichés à l'écran sont regroupés ICI
 // (= une String Table d'Unreal). Le code écrit TEXTES.retour
-// au lieu de "← List" en dur. Pour la traduction (V0.3), il suffira
-// d'avoir un deuxième objet comme celui-ci, en français.
+// au lieu de "← Liste" en dur. Pour ajouter l'anglais plus tard, il
+// suffira d'avoir un deuxième objet comme celui-ci.
 //
 // Les textes "à trous" (un nom, un nombre à insérer) sont des petites
 // FONCTIONS : (nom) => `Delete ${nom}?` (= un Format Text avec {Nom}).
 //
-// ⚠️ Seuls les TEXTES AFFICHÉS sont en anglais. Les clés internes
+// ⚠️ Les clés internes
 // (pv, espoir, caracs, data-action...) restent telles quelles : ce sont
 // des identifiants, jamais montrés au joueur. Les changer casserait
 // les sauvegardes pour rien.
 const TEXTES = {
   // Caracs et ressources
-  agility: "Agility",
-  strength: "Strength",
+  // ⚠️ Traductions maison : si une édition française officielle existe,
+  // ses termes peuvent différer (à vérifier un jour).
+  agility: "Agilité",
+  strength: "Force",
   finesse: "Finesse",
   instinct: "Instinct",
-  presence: "Presence",
-  knowledge: "Knowledge",
-  hp: "HP",
+  presence: "Présence",
+  knowledge: "Savoir",
+  hp: "PV",
   stress: "Stress",
-  hope: "Hope",
+  hope: "Espoir",
   max: (label) => `${label} max`,
 
   // Écran liste
-  titreListe: (n) => `Characters (${n})`,
-  niveauCourt: (n) => `Lvl ${n}`,
-  nouveauPerso: "+ New character",
-  exporter: "⬇ Export",
-  importer: "⬆ Import",
+  titreListe: (n) => `Personnages (${n})`,
+  niveauCourt: (n) => `Niv. ${n}`,
+  nouveauPerso: "+ Nouveau personnage",
+  exporter: "⬇ Exporter",
+  importer: "⬆ Importer",
 
   // Fiche
-  retour: "← List",
-  termine: "✓ Done",
-  niveauLong: (n) => `Level ${n}`,
-  caracteristiques: "Traits",
-  ressources: "Resources",
-  soinComplet: "Full heal",
-  dupliquer: "Duplicate this character",
-  supprimer: "Delete this character",
+  retour: "← Liste",
+  termine: "✓ Terminé",
+  niveauLong: (n) => `Niveau ${n}`,
+  caracteristiques: "Caractéristiques",
+  ressources: "Ressources",
+  soinComplet: "Soin complet",
+  dupliquer: "Dupliquer ce personnage",
+  supprimer: "Supprimer ce personnage",
 
   // Champs d'édition
-  nom: "Name",
-  ascendance: "Ancestry",
-  communaute: "Community",
-  classe: "Class",
-  niveau: "Level",
+  nom: "Nom",
+  ascendance: "Ascendance",
+  communaute: "Communauté",
+  classe: "Classe",
+  niveau: "Niveau",
 
   // Valeurs par défaut
-  sansNom: "Unnamed",
-  suffixeCopie: " (copy)",
+  sansNom: "Sans nom",
+  suffixeCopie: " (copie)",
 
   // Messages (alert / confirm)
-  confirmerSuppression: (nom) => `Delete ${nom}? This cannot be undone.`,
-  jsonIllisible: "This file is not readable JSON.",
-  pasUneSauvegarde: "This file doesn't look like a Daggerheart Companion save (or it comes from a newer version).",
+  confirmerSuppression: (nom) => `Supprimer ${nom} ? C'est définitif.`,
+  jsonIllisible: "Ce fichier n'est pas un JSON lisible.",
+  pasUneSauvegarde: "Ce fichier ne ressemble pas à une sauvegarde Daggerheart Companion (ou vient d'une version plus récente).",
   confirmerImport: (nb, nbActuels) =>
-    `Import ${nb} character(s)?\n` +
-    `This REPLACES the ${nbActuels} current character(s) and your lists.`,
+    `Importer ${nb} personnage(s) ?\n` +
+    `Ça REMPLACE les ${nbActuels} personnage(s) actuels et tes listes.`,
 
   // Écran des listes (classes, ascendances, communautés)
-  boutonListes: "☰ Lists",
-  titreListes: "Lists",
+  boutonListes: "☰ Listes",
+  titreListes: "Listes",
   listeClasses: "Classes",
-  listeAscendances: "Ancestries",
-  listeCommunautes: "Communities",
-  listeVide: "Empty for now.",
-  nomEn: "Name (EN)",
-  nomFr: "Name (FR, optional)",
-  ajouterEntree: "+ Add",
-  nomManquant: "Enter a name in English first.",
-  doublon: (nom) => `"${nom}" is already in this list.`,
-  confirmerRetrait: (nom) => `Remove ${nom} from the list?`,
+  listeAscendances: "Ascendances",
+  listeCommunautes: "Communautés",
+  listeVide: "Vide pour l'instant.",
+  nomFr: "Nom",
+  nomEn: "Nom anglais (facultatif)",
+  ajouterEntree: "+ Ajouter",
+  nomManquant: "Indique d'abord un nom.",
+  doublon: (nom) => `« ${nom} » est déjà dans cette liste.`,
+  confirmerRetrait: (nom) => `Retirer ${nom} de la liste ?`,
 
   // Menus déroulants de la fiche
-  choisir: "— Choose —",
-  autre: "Other…",
-  saisieLibre: "Type it here",
-  listeVideAide: "This list is empty: fill it in ☰ Lists.",
+  choisir: "— Choisir —",
+  autre: "Autre…",
+  saisieLibre: "Écris-le ici",
+  listeVideAide: "Cette liste est vide : remplis-la dans ☰ Listes.",
 
   // Création / validation / correction MJ
-  titreCreation: "New character",
-  creer: "✓ Create character",
-  brouillon: "Draft",
-  manque: (champs) => `Missing: ${champs.join(", ")}.`,
-  correctionMj: "✎ GM fix",
-  annuler: "✕ Cancel",
-  confirmerCorrection: "Edit a finished character? (GM fix: identity, traits and max values)",
+  titreCreation: "Nouveau personnage",
+  creer: "✓ Créer le personnage",
+  brouillon: "Brouillon",
+  manque: (champs) => `Il manque : ${champs.join(", ")}.`,
+  correctionMj: "✎ Correction MJ",
+  annuler: "✕ Annuler",
+  confirmerCorrection: "Modifier un personnage terminé ? (correction MJ : identité, caracs et max)",
 };
 
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
@@ -268,10 +270,11 @@ function migrer(donnees) {
 }
 
 // Vérifie les listes : un objet avec les 3 tableaux attendus, chaque entrée
-// ayant au moins un id et un nom anglais (le nom français est facultatif).
+// ayant au moins un id et un nom (français, ou anglais pour les anciennes entrées).
 function listesValides(l) {
   const entreeOk = (e) => typeof e === "object" && e !== null
-    && typeof e.id === "string" && typeof e.en === "string";
+    && typeof e.id === "string"
+    && (typeof e.fr === "string" || typeof e.en === "string");
   return typeof l === "object" && l !== null
     && Object.keys(LISTES_VIDES).every((cle) => Array.isArray(l[cle]) && l[cle].every(entreeOk));
 }
@@ -415,10 +418,10 @@ function supprimerPerso(id) {
 
 // --- 1c bis. LES LISTES : ajouter / retirer une entrée -------
 
-// Fabrique un identifiant à partir du nom anglais :
-//   "Sea Born!" → "sea-born"
+// Fabrique un identifiant à partir du nom :
+//   "Né de la Mer !" → "ne-de-la-mer"
 // C'est cet id qu'un perso enregistrera (étape 3c), JAMAIS le nom affiché :
-// on pourra corriger une faute ou ajouter le français sans casser les persos.
+// on pourra corriger une faute ou ajouter l'anglais sans casser les persos.
 // Les /.../ sont des "expressions régulières" (des motifs de recherche) :
 //   [^a-z0-9]+  = "un ou plusieurs caractères qui ne sont NI lettre NI chiffre"
 //   ^-|-$       = "un tiret au tout début OU à la toute fin"
@@ -430,22 +433,28 @@ function versId(texte) {
     .replace(/^-|-$/g, "");
 }
 
-function ajouterEntree(cle, en, fr) {
-  en = en.trim();
+// Le nom affiché d'une entrée : le français, sinon l'anglais
+// (les entrées créées quand l'app était en anglais n'ont que "en").
+function nomEntree(e) {
+  return e.fr || e.en;
+}
+
+function ajouterEntree(cle, fr, en) {
   fr = fr.trim();
-  if (!en) {
+  en = en.trim();
+  if (!fr) {
     alert(TEXTES.nomManquant);
     return;
   }
   // Nom fait uniquement de symboles ("???") → id vide : on en fabrique un.
-  const id = versId(en) || "entree-" + Date.now();
+  const id = versId(fr) || "entree-" + Date.now();
   // .some = "est-ce qu'AU MOINS UN élément vérifie la condition ?"
   // (le contraire de .every). Ici : cet id existe-t-il déjà ?
   if (listes[cle].some((e) => e.id === id)) {
-    alert(TEXTES.doublon(en));
+    alert(TEXTES.doublon(fr));
     return;
   }
-  listes[cle].push({ id: id, en: en, fr: fr });
+  listes[cle].push({ id: id, fr: fr, en: en });
   sauvegarder();
 }
 
@@ -470,11 +479,11 @@ function trouverEntree(cleListe, id) {
   return listes[cleListe].find((e) => e.id === id);
 }
 
-// Le texte à afficher pour ce champ. V0.3 : on choisira e.en ou e.fr selon la langue.
+// Le texte à afficher pour ce champ.
 function nomChoix(cleListe, valeur) {
   if (estVide(valeur)) return "?";
   const entree = trouverEntree(cleListe, valeur);
-  return entree ? entree.en : valeur;
+  return entree ? nomEntree(entree) : valeur;
 }
 
 // Ce qui manque pour valider un brouillon. Renvoie la liste des labels
@@ -552,16 +561,16 @@ function afficherListe() {
 }
 
 // Écran GESTION DES LISTES : pour chaque liste, ses entrées + un mini
-// formulaire d'ajout. Chaque champ a un id unique (nouveau-en-classes...)
+// formulaire d'ajout. Chaque champ a un id unique (nouveau-fr-classes...)
 // pour qu'au clic sur "+ Add" on sache lequel lire.
 function afficherGestionListes() {
   const blocs = LISTES.map(([cle, titre]) => {
     // [...tableau] = une COPIE, qu'on trie pour l'affichage sans toucher
     // à l'ordre stocké. localeCompare = comparaison alphabétique propre.
-    const triees = [...listes[cle]].sort((a, b) => a.en.localeCompare(b.en));
+    const triees = [...listes[cle]].sort((a, b) => nomEntree(a).localeCompare(nomEntree(b)));
     const lignes = triees.map((e) => `
       <li class="entree">
-        <span>${echapper(e.en)}${e.fr ? ` <span class="fr">· ${echapper(e.fr)}</span>` : ""}</span>
+        <span>${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}</span>
         <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
       </li>
     `).join("");
@@ -570,11 +579,11 @@ function afficherGestionListes() {
       <article class="fiche bloc-liste">
         <h3>${titre} (${listes[cle].length})</h3>
         ${lignes ? `<ul class="entrees">${lignes}</ul>` : `<p class="vide">${TEXTES.listeVide}</p>`}
-        <label class="champ">${TEXTES.nomEn}
-          <input type="text" id="nouveau-en-${cle}">
-        </label>
         <label class="champ">${TEXTES.nomFr}
           <input type="text" id="nouveau-fr-${cle}">
+        </label>
+        <label class="champ">${TEXTES.nomEn}
+          <input type="text" id="nouveau-en-${cle}">
         </label>
         <button class="ajouter" data-action="ajouter-entree" data-cle="${cle}">${TEXTES.ajouterEntree}</button>
       </article>
@@ -616,11 +625,11 @@ function champChoix(perso, champ, cleListe, label) {
   // est un texte qui ne correspond à aucune entrée de la liste.
   const autre = champsAutre.has(champ) || (!estVide(valeur) && !entree);
 
-  const triees = [...listes[cleListe]].sort((a, b) => a.en.localeCompare(b.en));
+  const triees = [...listes[cleListe]].sort((a, b) => nomEntree(a).localeCompare(nomEntree(b)));
   // selected = l'option affichée par défaut. ${cond ? "selected" : ""}
   // n'écrit le mot que pour la bonne option.
   const options = triees.map((e) =>
-    `<option value="${e.id}" ${entree === e ? "selected" : ""}>${echapper(e.en)}</option>`
+    `<option value="${e.id}" ${entree === e ? "selected" : ""}>${echapper(nomEntree(e))}</option>`
   ).join("");
 
   return `
@@ -862,15 +871,15 @@ document.getElementById("app").addEventListener("click", (event) => {
       const cle = bouton.dataset.cle;
       // On LIT la page ici (la valeur tapée), mais on ne la modifie pas :
       // la donnée change, puis rendre() redessine tout (champs vidés inclus).
-      const en = document.getElementById(`nouveau-en-${cle}`).value;
       const fr = document.getElementById(`nouveau-fr-${cle}`).value;
-      ajouterEntree(cle, en, fr);
+      const en = document.getElementById(`nouveau-en-${cle}`).value;
+      ajouterEntree(cle, fr, en);
       break;
     }
     case "retirer-entree": {
       const cle = bouton.dataset.cle;
       const entree = listes[cle].find((e) => e.id === bouton.dataset.id);
-      if (entree && confirm(TEXTES.confirmerRetrait(entree.en))) {
+      if (entree && confirm(TEXTES.confirmerRetrait(nomEntree(entree)))) {
         retirerEntree(cle, entree.id);
       }
       break;

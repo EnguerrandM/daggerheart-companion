@@ -1,8 +1,8 @@
 {
   "name": "Daggerheart Companion",
   "short_name": "Daggerheart",
-  "description": "Character sheets for the Daggerheart TTRPG",
-  "lang": "en",
+  "description": "Fiches de personnages pour le JDR Daggerheart",
+  "lang": "fr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
