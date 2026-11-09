@@ -1262,7 +1262,7 @@ function afficherPersonnage(perso) {
       <button class="retour" data-action="editer">${modeEdition ? TEXTES.termine : TEXTES.correctionMj}</button>
     </div>
     ${modeEdition ? `
-      <article class="fiche">
+      <article class="fiche fiche-perso">
         ${identiteEdition(perso)}
         <h3>${TEXTES.caracteristiques}</h3>
         ${caracsEdition(perso)}
@@ -1319,7 +1319,7 @@ function styleDomaines(couleurs) {
 function afficherDeck(perso) {
   const caps = capacitesDuPerso(perso);
   const carteFiche = `
-    <article class="fiche carte-deck">
+    <article class="fiche fiche-perso carte-deck">
       ${identiteLecture(perso)}
       <h3>${TEXTES.caracteristiques}</h3>
       ${caracsJeu(perso)}
@@ -1442,7 +1442,7 @@ function afficherCreation(perso) {
   return `
     <button class="retour" data-action="retour">${TEXTES.retour}</button>
     <h2>${TEXTES.titreCreation}</h2>
-    <article class="fiche">
+    <article class="fiche fiche-perso">
       ${identiteEdition(perso)}
 
       <h3>${TEXTES.caracteristiques}</h3>

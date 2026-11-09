@@ -15,20 +15,22 @@
        Variables CSS (= Material Parameter Collection) : on change une
        couleur ICI et toute l'app suit. Usage : var(--accent). */
     :root {
-      /* Thème ARGENT (?v=41) : base neutre grise, pour que les couleurs des
-         cartes (domaines, or, argent) soient les seules vraies couleurs.
-         Ancien thème sarcelle + or : voir l'historique Git (?v=40). */
-      --fond:         #121315;   /* gris presque noir */
-      --fond-halo:    #2b2e33;   /* halos "nébuleuse" du fond */
-      --fond-halo-2:  #1f2125;
-      --carte:        rgba(34, 36, 40, 0.80);  /* cartes légèrement translucides */
-      --carte-creux:  #17181b;   /* fond des champs de saisie */
-      --bordure:      #3c4046;
-      --accent:       #c5ccd3;   /* argent (ex --or) */
-      --accent-clair: #eef1f4;
-      --texte:        #ececec;
-      --texte-doux:   #a2a8af;
-      --danger:       #d98a6e;   /* terracotta */
+      /* Thème ARGENT + OR (?v=42) : base neutre grise ; l'argent pour ce
+         qu'on touche (boutons, valeurs), l'or pour les titres et la fiche
+         de perso. Ancien thème sarcelle + or : historique Git (?v=40). */
+      --fond:         #141518;   /* gris presque noir */
+      --fond-halo:    #33373d;   /* halos "nébuleuse" du fond */
+      --fond-halo-2:  #24272b;
+      --carte:        rgba(38, 40, 45, 0.82);  /* cartes légèrement translucides */
+      --carte-creux:  #191a1e;   /* fond des champs de saisie */
+      --bordure:      #4a4f57;
+      --accent:       #e1e6ec;   /* argent lumineux */
+      --accent-clair: #ffffff;
+      --or:           #d9b96e;   /* or : titres + fiche de perso */
+      --or-clair:     #f3dfa6;
+      --texte:        #f0f0f0;
+      --texte-doux:   #b6bcc4;
+      --danger:       #e09478;   /* terracotta */
     }
 
     body {
@@ -45,16 +47,18 @@
         radial-gradient(ellipse at 10% 95%, var(--fond-halo-2) 0%, transparent 50%),
         var(--fond);
     }
-    h1 { color: var(--accent); letter-spacing: 0.04em; }
-    h2 { color: var(--accent-clair); }
+    h1 { color: var(--or); letter-spacing: 0.04em; }
+    h2 { color: var(--or-clair); }
     .fiche {
       background: var(--carte);
       border: 1px solid var(--bordure);
       border-radius: 12px;
       padding: 1rem;
     }
+    /* La FICHE DE PERSO (jeu, correction MJ, création) : bordure dorée. */
+    .fiche-perso { border-color: var(--or); }
     .fiche h2 { margin-top: 0; }
-    .fiche h3 { color: var(--accent); margin-bottom: 0.3rem; }
+    .fiche h3 { color: var(--or); margin-bottom: 0.3rem; }
     .ressource {
       display: flex;          /* éléments alignés sur une ligne */
       align-items: center;
@@ -75,7 +79,7 @@
       color: var(--texte-doux);
       font-size: 1rem;
     }
-    .carte-perso strong { font-size: 1.2rem; color: var(--accent); }
+    .carte-perso strong { font-size: 1.2rem; color: var(--or); }
     .retour {
       margin-bottom: 0.75rem;
       padding: 0.6rem 1rem;
@@ -120,7 +124,8 @@
       font-size: 1.4rem;
       border: none;
       border-radius: 8px;
-      background: var(--accent);
+      /* argent "métal" : dégradé clair en haut, plus sombre en bas */
+      background: linear-gradient(180deg, #ffffff 0%, var(--accent) 45%, #a9b1ba 100%);
       color: var(--fond);
     }
     .fillHeal {   width: 50%;
@@ -353,9 +358,9 @@
       justify-content: center;
       width: 2rem;
       height: 2rem;
-      border: 2px solid var(--accent);
+      border: 2px solid var(--or);
       border-radius: 50%;        /* carré + 50 % = cercle */
-      color: var(--accent);
+      color: var(--or);
       font-size: 1rem;
       font-weight: bold;
     }
@@ -386,7 +391,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=41" defer></script>
+  <script src="app.js?v=42" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
