@@ -215,12 +215,20 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
 - ✅ DA des cartes validée par Enguy (« parfait comme ça »). Il retravaillera peut-être des fonds d'images plus tard.
 - ✅ **V0.3 VALIDÉE sur téléphone le 2026-11-09** (critère de réussite complet, export/import compris). `VERSION_APP = "0.3"` (`?v=45`).
 
+## Plan V0.4 — défense (cadrage validé le 2026-11-09)
+Principe d'Enguy : **tout à la main pour commencer**, aucune valeur calculée (ni à partir de la classe, ni de l'armure, ni du niveau). Pas de liste d'armures.
+1. **Données + édition** : 4 champs sur le perso — `evasion`, `armure` (score max), `seuilMajeur`, `seuilGrave` — + emplacements d'armure cochés (état de jeu, comme les PV). Valeurs **libres** en édition (pas de verrou GM fix : on change d'armure en campagne). **Obligatoires à la création** (vides par défaut, comme le nom). Migration de sauvegarde (v8) : valeurs par défaut pour les vieux persos et les vieux exports.
+2. **Ligne des seuils** sur la fiche, sous classe · sous-classe · ascendance · communauté : `[1] majeur [2] grave [3]`.
+3. **Ligne défense** : à gauche un rond avec l'évasion ; plus à droite un bouclier avec le score d'armure, puis autant de cases à cocher/décocher que ce score. Piège : jusqu'à 12 cases (à vérifier SRD) → retour à la ligne ou cases réduites sur téléphone.
+
+**Critère de réussite V0.4** : saisir les valeurs à la création et les modifier en édition ; cocher/décocher des emplacements ; fermer/rouvrir ; export/import ; réimporter un export V0.3 sans casse.
+
+**Dette assumée** : les seuils dépendent du niveau (à vérifier SRD) → à mettre à jour à la main à chaque montée de niveau. Calcul auto possible plus tard par-dessus les mêmes champs. Option écartée pour l'instant : calculateur de dégâts (« 14 → 2 PV »).
+
 ## Prochaine étape
-**V0.4 — cartes de domaine : session de CADRAGE avant de coder.** Pistes déjà posées :
-- Liste de **cartes de domaine** saisies par Enguy avec ses mots (domaine, niveau, type ?, coût de rappel ?, nom, texte), sur le modèle des capacités ; la liste `domaines` (avec couleurs) existe déjà.
-- **Choix des cartes à la création**, filtré par les 2 domaines de la classe et le niveau ; ajout/retrait en correction MJ.
-- Les cartes rejoignent le **deck**, aux couleurs de leur domaine.
-- À vérifier dans le SRD : format exact d'une carte de domaine, nombre de cartes au niveau 1, **loadout / vault** (cartes actives / en réserve) — le vault pourra attendre la montée de niveau.
+**V0.4 étape 1** (données + édition + migration v8).
+
+**Repoussé** : V0.5 = cartes de domaine — liste saisie par Enguy (domaine, niveau, type ?, coût de rappel ?, nom, texte) sur le modèle des capacités ; choix à la création filtré par les 2 domaines de la classe et le niveau ; cartes dans le deck aux couleurs du domaine ; à vérifier SRD : format d'une carte, nombre au niveau 1, loadout / vault. V0.6 = anglais.
 - Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.
 
-**Petites dettes (non urgentes)** : icônes de l'app encore sarcelle/or (thème passé argent + or) → à refaire par Enguy ; bouton retour d'Android = perte possible d'un brouillon de capacité ; « Soin complet » = hack `delta 99` ; renommer le dépôt (optionnel) ; V0.5 = anglais.
+**Petites dettes (non urgentes)** : icônes de l'app encore sarcelle/or (thème passé argent + or) → à refaire par Enguy ; bouton retour d'Android = perte possible d'un brouillon de capacité ; « Soin complet » = hack `delta 99` ; renommer le dépôt (optionnel).
