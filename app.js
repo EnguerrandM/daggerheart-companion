@@ -98,6 +98,8 @@ const TEXTES = {
   capaciteSansNom: "Une capacité a un texte mais pas de nom.",
   confirmerRetraitCapacite: (nom) => `Retirer la capacité ${nom || "sans nom"} ?`,
   confirmerAbandon: "Abandonner les modifications non enregistrées ?",
+  precedente: "Carte précédente",
+  suivante: "Carte suivante",
   aucuneCapacite: "Aucune capacité pour l'instant : ajoute-les dans ☰ Listes (✎ sur la classe, la sous-classe, l'ascendance ou la communauté).",
   enregistrer: "✓ Enregistrer",
   annuler: "✕ Annuler",
@@ -487,6 +489,11 @@ let ecran = null;
 //   original       = la même copie, intacte, pour savoir s'il y a eu des changements
 // Rien ne touche la vraie liste avant "✓ Enregistrer". État d'interface.
 let entreeEditee = null;
+
+// Quelle carte du deck est affichée (0 = la première). État d'interface,
+// gardé à part car rendre() redessine toute la fiche à chaque +/− :
+// sans ça, le deck reviendrait à la 1re carte à chaque clic sur les PV.
+let indexDeck = 0;
 
 // Ouvre l'écran d'entrée : prépare le brouillon (copie profonde).
 function ouvrirEntree(cle, id, classe) {
@@ -1172,7 +1179,7 @@ function afficherPersonnage(perso) {
       <h3>${TEXTES.ressources}</h3>
       ${modeEdition ? ressourcesEdition(perso) : ressourcesLecture(perso)}
 
-      ${modeEdition ? "" : `<h3>${TEXTES.capacites}</h3>${capacitesLecture(perso)}`}
+      ${modeEdition ? "" : `<h3>${TEXTES.capacites}</h3>${afficherDeck(perso)}`}
     </article>
     ${modeEdition ? `<button class="ajouter" data-action="dupliquer">${TEXTES.dupliquer}</button>` : ""}
     ${modeEdition ? `<button class="supprimer" data-action="supprimer">${TEXTES.supprimer}</button>` : ""}
@@ -1184,12 +1191,12 @@ function afficherPersonnage(perso) {
 // Le perso ne STOCKE aucune capacité : on les retrouve via ses ids à chaque
 // affichage → corriger une capacité dans ☰ Listes corrige tous les persos.
 // flatMap = map, puis aplatit : [[a, b], [c]] → [a, b, c].
-// Servira aussi au deck (étape 4).
 function capacitesDuPerso(perso) {
   return CHAMPS_LISTE.flatMap((c) => {
     const e = trouverEntree(c.liste, perso[c.champ]);
     if (!e) return [];   // pas choisi, texte libre ou entrée retirée
     return e.capacites.map((cap) => ({
+      champ: c.champ,         // "classe", "sousClasse"... (pour la couleur)
       type: c.label,          // "Classe", "Ascendance"...
       origine: nomEntree(e),  // "Gardien", "Orc"...
       nom: cap.nom,
@@ -1198,17 +1205,60 @@ function capacitesDuPerso(perso) {
   });
 }
 
-// Affichage simple (provisoire : le deck le remplacera à l'étape 4).
-function capacitesLecture(perso) {
+// LE DECK : les capacités en cartes côte à côte, qu'on fait défiler.
+// Le défilement est géré par le NAVIGATEUR (CSS scroll-snap : le doigt
+// glisse, la carte se "cale" toute seule). Le JS ne fait que les boutons
+// ◀ ▶ et le compteur "2 / 6".
+// data-type = le type de la carte (classe, sousClasse...) → couleur du badge en CSS.
+function afficherDeck(perso) {
   const caps = capacitesDuPerso(perso);
   if (caps.length === 0) return `<p class="aide">${TEXTES.aucuneCapacite}</p>`;
-  return caps.map((c) => `
-    <div class="capacite">
+  const cartes = caps.map((c) => `
+    <div class="carte-capacite" data-type="${c.champ}">
       <span class="type-capacite">${echapper(c.type)} · ${echapper(c.origine)}</span>
       <strong>${echapper(c.nom)}</strong>
       <p>${echapper(c.texte)}</p>
     </div>
   `).join("");
+  return `
+    <div class="deck" id="deck">${cartes}</div>
+    <div class="nav-deck">
+      <button data-action="deck-precedente" aria-label="${TEXTES.precedente}">◀</button>
+      <span id="compteur-deck">1 / ${caps.length}</span>
+      <button data-action="deck-suivante" aria-label="${TEXTES.suivante}">▶</button>
+    </div>
+  `;
+}
+
+// Distance (en pixels) entre le début de deux cartes = largeur + espace.
+// offsetLeft = position d'un élément dans son parent (le deck est en
+// position: relative, donc c'est lui le repère).
+function pasDeck(deck) {
+  const cartes = deck.children;
+  return cartes.length > 1 ? cartes[1].offsetLeft - cartes[0].offsetLeft : 1;
+}
+
+// Met à jour le compteur et les boutons SANS tout redessiner
+// (on modifie juste 3 éléments : bien plus léger que rendre()).
+function majDeck() {
+  const deck = document.getElementById("deck");
+  if (!deck) return;
+  const n = deck.children.length;
+  // Math.round = la carte la plus proche de la position actuelle.
+  indexDeck = borner(Math.round(deck.scrollLeft / pasDeck(deck)), 0, n - 1);
+  document.getElementById("compteur-deck").textContent = `${indexDeck + 1} / ${n}`;
+  document.querySelector('[data-action="deck-precedente"]').disabled = indexDeck === 0;
+  document.querySelector('[data-action="deck-suivante"]').disabled = indexDeck === n - 1;
+}
+
+// Va à la carte i. smooth = animation ; sinon saut immédiat.
+function allerCarte(i, smooth) {
+  const deck = document.getElementById("deck");
+  if (!deck) return;
+  const n = deck.children.length;
+  indexDeck = borner(i, 0, n - 1);
+  deck.scrollTo({ left: indexDeck * pasDeck(deck), behavior: smooth ? "smooth" : "auto" });
+  majDeck();
 }
 
 // Écran CRÉATION : les mêmes blocs d'édition que la correction MJ
@@ -1390,6 +1440,9 @@ function rendre() {
   }
   const perso = trouverPerso(persoOuvertId);
   zone.innerHTML = perso ? afficherPersonnage(perso) : afficherListe();
+  // Le HTML vient d'être recréé : le deck repart à 0. On le replace
+  // (sans animation) sur la carte où on était.
+  allerCarte(indexDeck, false);
 }
 
 // --- 5. LES ÉVÉNEMENTS : un seul écouteur pour tous les clics ----
@@ -1400,8 +1453,15 @@ document.getElementById("app").addEventListener("click", (event) => {
   if (!bouton) return;
 
   switch (bouton.dataset.action) {
+    case "deck-precedente":
+      allerCarte(indexDeck - 1, true);
+      return;   // pas de rendre() : le navigateur fait défiler tout seul
+    case "deck-suivante":
+      allerCarte(indexDeck + 1, true);
+      return;
     case "ouvrir":
       persoOuvertId = bouton.dataset.id;
+      indexDeck = 0;   // nouveau perso → première carte
       champsAutre.clear();
       jetonSelectionne = null;
       caracOuverte = null;
@@ -1613,6 +1673,14 @@ document.getElementById("app").addEventListener("click", (event) => {
 // "input" se déclenche à CHAQUE frappe (= un Event "On Text Changed").
 // On met à jour la donnée et on sauvegarde, mais on NE rappelle PAS
 // rendre() : ça reconstruirait le champ et fermerait le clavier.
+// Défilement du deck au doigt → on met à jour le compteur.
+// Piège : l'événement "scroll" ne REMONTE PAS (pas de "bubbling") jusqu'à
+// #app, contrairement à "click". Le true final = écouter en phase de
+// "capture" (en descendant vers l'élément), ce qui marche quand même.
+document.getElementById("app").addEventListener("scroll", (event) => {
+  if (event.target.id === "deck") majDeck();
+}, true);
+
 document.getElementById("app").addEventListener("input", (event) => {
   const d = event.target.dataset;
   // Écran d'entrée : on écrit dans le BROUILLON (pas dans la liste, pas de

@@ -189,9 +189,14 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
   - `capacitesDuPerso()` (`flatMap` sur `CHAMPS_LISTE`) : le perso ne stocke aucune capacité, on les retrouve via ses ids. Affichage provisoire sur la fiche (section Capacités, `white-space: pre-line` pour les retours à la ligne) → sera remplacé par le deck. Liste : « · N cap. » à côté de chaque entrée.
   - Limite : le bouton retour d'Android ne passe pas par « Annuler » (l'app ne gère pas l'historique) → un brouillon non enregistré peut être perdu.
   - Testé en simulation.
+- ✅ Étape 3 validée sur téléphone (2026-11-09) ; Enguy a saisi toutes les capacités d'une Fae Druide née du savoir pour tester.
+- [x] Étape 4 (`?v=35`) : **le deck** remplace l'affichage provisoire. CSS `scroll-snap` (`overflow-x: auto` + `scroll-snap-type: x mandatory` ; cartes `flex: 0 0 88%` → on devine la suivante ; `box-sizing: border-box` sinon le padding s'ajoute aux 88 %). Couleur par type via `data-type` + variable CSS `--accent-carte` (classe or, sous-classe lilas, ascendance vert d'eau, communauté terracotta).
+  - JS minimal : ◀ ▶ (`allerCarte()` → `scrollTo` smooth), compteur « 2 / 6 » + boutons désactivés aux bouts (`majDeck()`, met à jour 3 éléments sans `rendre()`). Le défilement au doigt est géré par le navigateur ; on l'écoute avec `addEventListener("scroll", …, true)` : **scroll ne remonte pas** (pas de bubbling), le `true` = phase de capture.
+  - Piège évité : `rendre()` redessine toute la fiche à chaque +/− → le deck revenait à la 1re carte. État `indexDeck` + `allerCarte(indexDeck, false)` à la fin de `rendre()`. Remis à 0 quand on ouvre un autre perso.
+  - Testé en simulation (boutons, compteur, bouts, position conservée après +Stress).
 
 ## Prochaine étape
-**V0.3 — étape 4 : le deck** (voir Plan V0.3). Ancien cadrage :
+**V0.3 — validation du critère de réussite sur téléphone**, puis cadrage V0.4 (voir Plan V0.3). Ancien cadrage :
 - Capacités d'ascendance (2) et de communauté (1) rattachées aux entrées des listes, saisies par Enguy.
 - Cartes de domaine : domaines (2 par classe), cartes saisies par Enguy (nom, domaine, niveau, coût, texte avec ses mots), 2 cartes choisies à la création.
 - Vue « deck » sur la fiche : swipe (CSS `scroll-snap`) + boutons ◀ ▶.

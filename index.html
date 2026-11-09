@@ -159,15 +159,58 @@
       background: none;
       color: var(--danger);
     }
-    .capacite {
-      margin-bottom: 0.75rem;
-      padding: 0.75rem;
-      border: 1px solid var(--bordure);
-      border-radius: 10px;
-      background: var(--carte-creux);
+    /* ===== Deck de capacités ===== */
+    .deck {
+      position: relative;            /* repère pour offsetLeft des cartes (JS) */
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;              /* défilement horizontal */
+      scroll-snap-type: x mandatory; /* chaque arrêt se "cale" sur une carte */
+      padding-bottom: 0.5rem;
+      scrollbar-width: none;         /* pas de barre de défilement (Firefox) */
     }
-    .capacite strong { display: block; color: var(--or); margin: 0.2rem 0; }
-    .capacite p { margin: 0; white-space: pre-line; }   /* garde les retours à la ligne tapés */
+    .deck::-webkit-scrollbar { display: none; }   /* idem (Chrome) */
+    .carte-capacite {
+      flex: 0 0 88%;                 /* 88 % : on devine la carte suivante */
+      box-sizing: border-box;        /* les 88 % INCLUENT padding et bordure */
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-height: 14rem;
+      padding: 1rem;
+      border: 1px solid var(--accent-carte);
+      border-top: 4px solid var(--accent-carte);
+      border-radius: 14px;
+      background: linear-gradient(160deg, var(--carte-creux), #081f1d);
+      /* couleur par défaut, remplacée selon le type ci-dessous */
+      --accent-carte: var(--or);
+    }
+    /* Une couleur par type : une variable CSS changée selon data-type */
+    .carte-capacite[data-type="sousClasse"] { --accent-carte: #c9a7d8; }
+    .carte-capacite[data-type="ascendance"] { --accent-carte: #7cc4b4; }
+    .carte-capacite[data-type="communaute"] { --accent-carte: #e0a882; }
+    .carte-capacite .type-capacite { color: var(--accent-carte); }
+    .carte-capacite strong { color: var(--or); font-size: 1.15rem; }
+    .carte-capacite p { margin: 0; white-space: pre-line; line-height: 1.45; }   /* garde les retours à la ligne */
+    .nav-deck {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .nav-deck button {
+      width: 3rem;
+      height: 2.5rem;
+      border: 1px solid var(--or);
+      border-radius: 10px;
+      background: none;
+      color: var(--or);
+      font-size: 1rem;
+    }
+    .nav-deck button:disabled { opacity: 0.3; }
+    #compteur-deck { color: var(--texte-doux); min-width: 3.5rem; text-align: center; }
     .type-capacite { color: var(--texte-doux); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
     .sous-entree { margin-left: 1.25rem; }   /* sous-classes décalées sous leur classe */
     li.sous-entree:not(.entree) { list-style: none; padding: 0.4rem 0; border-bottom: 1px solid var(--bordure); }
@@ -277,7 +320,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=34" defer></script>
+  <script src="app.js?v=35" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
