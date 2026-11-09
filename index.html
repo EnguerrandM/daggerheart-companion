@@ -150,6 +150,39 @@
     }
     .vide { color: var(--texte-doux); font-style: italic; }
     .aide { color: var(--texte-doux); font-size: 0.85rem; font-style: italic; }
+    /* ===== Création : jetons de caracs ===== */
+    .reserve {
+      display: flex;
+      flex-wrap: wrap;          /* passe à la ligne si trop de jetons */
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0 0.75rem;
+    }
+    .jeton {
+      min-width: 3rem;
+      height: 2.75rem;
+      border: 2px solid var(--or);
+      border-radius: 999px;
+      background: none;
+      color: var(--or);
+      font-size: 1.1rem;
+    }
+    .jeton.choisi { background: var(--or); color: var(--fond); }   /* "dans la main" */
+    .cases { display: flex; flex-direction: column; gap: 0.4rem; }
+    .case-carac {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.7rem 1rem;
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+      background: var(--carte-creux);
+      color: var(--texte);
+      font-size: 1rem;
+    }
+    .case-carac .valeur { color: var(--or); font-size: 1.2rem; }
+    .case-carac.vide { border-style: dashed; color: var(--texte-doux); }
+    .cases.en-attente .case-carac { border-color: var(--or); }   /* invite à poser */
     .badge {
       font-size: 0.75rem;
       font-weight: normal;
@@ -177,7 +210,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=25" defer></script>
+  <script src="app.js?v=26" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

@@ -89,6 +89,9 @@ const TEXTES = {
   // Création / validation / correction MJ
   titreCreation: "Nouveau personnage",
   creer: "✓ Créer le personnage",
+  reserve: "Valeurs à placer",
+  toutPlace: "Tout est placé ✓",
+  aideJetons: "Touche une valeur, puis une caractéristique. Touche une carac remplie pour reprendre sa valeur.",
   brouillon: "Brouillon",
   manque: (champs) => `Il manque : ${champs.join(", ")}.`,
   correctionMj: "✎ Correction MJ",
@@ -150,6 +153,9 @@ const CARACS = [
   ["presence", TEXTES.presence],
   ["knowledge", TEXTES.knowledge],
 ];
+
+// Valeurs à répartir sur les 6 caracs à la création (règle vérifiée dans le SRD).
+const PRESET_CARACS = [2, 1, 1, 0, 0, -1];
 
 const RESSOURCES = [
   ["pv", TEXTES.hp],
@@ -290,7 +296,9 @@ function persoValide(p) {
     && typeof p.niveau === "number"
     && typeof p.cree === "boolean"
     && estObjet(p.caracs)
-    && CARACS.every(([cle]) => typeof p.caracs[cle] === "number")
+    // Une carac vaut un nombre ; null est permis seulement pour un
+    // brouillon (= valeur pas encore placée à la création).
+    && CARACS.every(([cle]) => typeof p.caracs[cle] === "number" || (!p.cree && p.caracs[cle] === null))
     && estObjet(p.ressources)
     && RESSOURCES.every(([cle]) => resOk(p.ressources[cle]));
 }
@@ -363,6 +371,10 @@ let champsAutre = new Set();
 // copie à la place du perso modifié. null = pas de correction en cours.
 let copieAvantCorrection = null;
 
+// À la création : la valeur "dans la main" (touchée dans la réserve ou
+// reprise d'une carac), ou null si rien n'est sélectionné. État d'interface.
+let jetonSelectionne = null;
+
 // Retrouver un perso par son id : .find parcourt le tableau et renvoie
 // le premier élément qui vérifie la condition (= un "Find" sur un Array
 // avec une condition, ou un ForEach + Branch + Break).
@@ -384,7 +396,8 @@ function nouveauPerso() {
     classe: "",
     niveau: 1,
     cree: false,        // brouillon : la fiche s'ouvre en écran de création
-    caracs: { agility: 0, strength: 0, finesse: 0, instinct: 0, presence: 0, knowledge: 0 },
+    // null = pas encore placée (le MJ répartit PRESET_CARACS à la création)
+    caracs: { agility: null, strength: null, finesse: null, instinct: null, presence: null, knowledge: null },
     ressources: {
       pv:     { actuel: 6, max: 6 },   // ⚠️ à vérifier selon la classe
       stress: { actuel: 0, max: 6 },
@@ -486,11 +499,49 @@ function nomChoix(cleListe, valeur) {
   return entree ? nomEntree(entree) : valeur;
 }
 
+// --- La répartition des caracs à la création ---
+// La RÉSERVE n'est pas stockée : on la recalcule = PRESET_CARACS moins les
+// valeurs déjà posées. Une seule source de vérité (perso.caracs), donc
+// impossible d'avoir une réserve et des caracs qui se contredisent.
+// .splice(i, 1) = retirer 1 élément à l'index i (= Remove Index).
+function reserve(perso) {
+  const restant = [...PRESET_CARACS];
+  CARACS.forEach(([cle]) => {
+    const v = perso.caracs[cle];
+    if (v === null) return;
+    const i = restant.indexOf(v);   // indexOf = Find : -1 si absent
+    if (i !== -1) restant.splice(i, 1);
+  });
+  return restant;
+}
+
+// Les valeurs posées viennent-elles bien du preset ? (faux pour un brouillon
+// créé avant cette version, qui a six 0 : il faut le remettre à vide)
+function repartitionCoherente(perso) {
+  const restant = [...PRESET_CARACS];
+  return CARACS.every(([cle]) => {
+    const v = perso.caracs[cle];
+    if (v === null) return true;
+    const i = restant.indexOf(v);
+    if (i === -1) return false;
+    restant.splice(i, 1);
+    return true;
+  });
+}
+
+function preparerBrouillon(perso) {
+  if (perso && !perso.cree && !repartitionCoherente(perso)) {
+    CARACS.forEach(([cle]) => { perso.caracs[cle] = null; });
+    sauvegarder();
+  }
+}
+
 // Ce qui manque pour valider un brouillon. Renvoie la liste des labels
 // manquants (tableau vide = tout est bon).
 function champsManquants(perso) {
   const manquants = [];
   if (!perso.nom.trim()) manquants.push(TEXTES.nom);
+  if (reserve(perso).length > 0) manquants.push(TEXTES.caracteristiques);
   CHAMPS_LISTE.forEach(([champ, , label]) => {   // la virgule seule = "on saute la 2e valeur"
     if (estVide(perso[champ])) manquants.push(label);
   });
@@ -726,6 +777,35 @@ function afficherPersonnage(perso) {
 // Écran CRÉATION : les mêmes blocs d'édition que la correction MJ
 // (on réutilise identiteEdition, caracsEdition, ressourcesEdition),
 // + un bouton pour valider. Un seul code pour les deux usages.
+// Création : la réserve de jetons + une case par carac.
+function caracsCreation(perso) {
+  const restant = reserve(perso);
+  // Les doublons (+1, +1) sont identiques : on n'allume que le PREMIER
+  // jeton qui a la valeur sélectionnée.
+  const iChoisi = restant.indexOf(jetonSelectionne);
+  const jetons = restant.map((v, i) =>
+    `<button class="jeton ${i === iChoisi ? "choisi" : ""}" data-action="jeton" data-valeur="${v}">${signe(v)}</button>`
+  ).join("");
+
+  const cases = CARACS.map(([cle, label]) => {
+    const v = perso.caracs[cle];
+    return `
+      <button class="case-carac ${v === null ? "vide" : ""}" data-action="poser" data-cle="${cle}">
+        <span>${label}</span>
+        <span class="valeur">${v === null ? "—" : signe(v)}</span>
+      </button>`;
+  }).join("");
+
+  return `
+    <p class="aide">${TEXTES.aideJetons}</p>
+    <div class="reserve">
+      <span class="label">${TEXTES.reserve}</span>
+      ${jetons || `<span>${TEXTES.toutPlace}</span>`}
+    </div>
+    <div class="cases ${jetonSelectionne !== null ? "en-attente" : ""}">${cases}</div>
+  `;
+}
+
 function afficherCreation(perso) {
   return `
     <button class="retour" data-action="retour">${TEXTES.retour}</button>
@@ -734,7 +814,7 @@ function afficherCreation(perso) {
       ${identiteEdition(perso)}
 
       <h3>${TEXTES.caracteristiques}</h3>
-      ${caracsEdition(perso)}
+      ${caracsCreation(perso)}
 
       <h3>${TEXTES.ressources}</h3>
       ${ressourcesEdition(perso)}
@@ -857,7 +937,32 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "ouvrir":
       persoOuvertId = bouton.dataset.id;
       champsAutre.clear();
+      jetonSelectionne = null;
+      preparerBrouillon(trouverPerso(persoOuvertId));
       break;
+    case "jeton": {
+      const v = Number(bouton.dataset.valeur);
+      // Toucher le jeton déjà allumé le relâche (= Flip Flop sur la sélection).
+      jetonSelectionne = jetonSelectionne === v ? null : v;
+      break;
+    }
+    case "poser": {
+      const perso = trouverPerso(persoOuvertId);
+      const cle = bouton.dataset.cle;
+      const actuel = perso.caracs[cle];
+      if (jetonSelectionne !== null) {
+        // On pose le jeton en main. S'il y avait déjà une valeur, elle
+        // retourne toute seule dans la réserve (recalculée par reserve()).
+        perso.caracs[cle] = jetonSelectionne;
+        jetonSelectionne = null;
+      } else if (actuel !== null) {
+        // Main vide + case remplie → on REPREND sa valeur en main.
+        perso.caracs[cle] = null;
+        jetonSelectionne = actuel;
+      }
+      sauvegarder();
+      break;
+    }
     case "retour":
       persoOuvertId = null;
       modeEdition = false;
@@ -926,6 +1031,7 @@ document.getElementById("app").addEventListener("click", (event) => {
       perso.cree = true;
       sauvegarder();
       champsAutre.clear();
+      jetonSelectionne = null;
       modeEdition = false;   // → la fiche s'affiche en mode jeu
       break;
     }
@@ -944,6 +1050,7 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "ajouter":
       persoOuvertId = ajouterPerso().id; // cree: false → écran de création
       modeEdition = false;
+      jetonSelectionne = null;
       break;
     case "dupliquer":
       persoOuvertId = dupliquerPerso(trouverPerso(persoOuvertId)).id;

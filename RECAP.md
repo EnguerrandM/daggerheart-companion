@@ -99,7 +99,7 @@ Tout le reste est hors périmètre pour la V0.1.
   - **V0.3** : capacités. Ascendance = 2 capacités, communauté = 1 (vérifié SRD), saisies par Enguy dans les listes. Cartes de domaine : chaque classe a 2 domaines, 2 cartes choisies à la création (vérifié SRD). Vue « deck » sur la fiche, swipe gauche/droite (CSS `scroll-snap`) + boutons ◀ ▶. Cartes saisies à la main par Enguy, avec ses mots.
   - **V0.4** : ajout de l'anglais (choix de langue).
   - Plus tard : montée de niveau. **Pas de multiclassage** avant longtemps.
-- Preset de caracs (vérifié SRD) : +2, +1, +1, +0, +0, −1 à répartir. Interface prévue : un menu par carac ; choisir une valeur déjà prise **échange** les deux → répartition toujours valide. Uniquement à la création ; la correction MJ garde les +/− libres.
+- Preset de caracs (vérifié SRD) : +2, +1, +1, +0, +0, −1 à répartir. Interface finalement retenue : toucher-poser (voir étape 4b). Uniquement à la création ; la correction MJ garde les +/− libres.
 - Décisions langue (2026-11-08) : un perso stocke un **identifiant** (`classe: "guardian"`), jamais le nom affiché ; données de référence en **un seul fichier**, une ligne par entrée avec les deux langues (`{ id, en, fr }`) ; Enguy n'a pas besoin de garder les persos actuels → pas de migration des anciens textes libres FR.
 
 **Critère de réussite V0.2** : installer l'app sur l'écran d'accueil ; créer un perso via l'écran de création avec listes ; identité verrouillée ; appliquer/retirer un debuff ; un export d'avant la V0.2 se réimporte correctement (migration).
@@ -135,6 +135,7 @@ Tout le reste est hors périmètre pour la V0.1.
   - « Dupliquer » ouvre la copie en édition sans confirmation (assumé : on vient de la créer).
 - [x] Correctif (`?v=24`, retour d'Enguy) : en GM fix, « ← List » gardait les modifs (sauvegarde à la frappe) → remplacé par « ✕ Cancel ». Snapshot `copieAvantCorrection` (`structuredClone`) pris en entrant en GM fix (et après Dupliquer) ; Cancel le remet à la même place (`findIndex`). « ✓ Done » garde les modifs. Limite : fermer l'app en pleine correction garde les modifs déjà tapées.
 - [x] **Retour au français** (`?v=25`, décision d'Enguy) : le contenu (listes, futures cartes) est saisi par Enguy en français avec ses propres mots, donc l'interface repasse en FR (`TEXTES`, `lang="fr"`, manifeste). Listes : nom **FR obligatoire**, nom EN facultatif (servira à relier à l'officiel anglais si autorisation). Id fabriqué depuis le nom FR. `nomEntree(e)` = `e.fr || e.en` → les entrées créées en anglais restent valides, pas de migration. Noms des caracs traduits maison (Agilité, Force, Finesse, Instinct, Présence, Savoir) : à comparer avec une éventuelle VF officielle.
+- [x] Étape 4b (`?v=26`) : preset de caracs à la création en **toucher-poser** (choix d'Enguy, plutôt que l'échange ou le vrai drag & drop, trop coûteux en tactile ; un vrai glisser pourra s'ajouter par-dessus plus tard). `PRESET_CARACS = [2, 1, 1, 0, 0, -1]`. Brouillon : caracs à `null` = pas placée (`persoValide` l'accepte seulement si `cree: false`). `reserve(perso)` recalcule la réserve (preset moins valeurs posées, `indexOf` + `splice`) → une seule source de vérité. État d'interface `jetonSelectionne`. Toucher une carac remplie main vide = reprendre sa valeur ; poser sur une carac remplie renvoie l'ancienne valeur dans la réserve. `champsManquants` exige une réserve vide. `preparerBrouillon()` remet à vide un vieux brouillon incohérent (six 0). Testé en simulation.
 
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
@@ -150,4 +151,4 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-V0.2 étape 4b : preset de caracs à la création (échange). Puis étape 5 (modificateurs `{ base, modif }`, migration v3 → v4), écran « About », critère de réussite V0.2.
+V0.2 étape 5 (modificateurs `{ base, modif }`, migration v3 → v4), écran « About », critère de réussite V0.2.
