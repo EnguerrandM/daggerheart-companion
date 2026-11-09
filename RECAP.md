@@ -183,9 +183,15 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
   - Testé en simulation (migration v4 → v5, ajout, doublon, filtre, reset, validation, cascade, hors liste).
 - ✅ Étape 2 validée sur téléphone (2026-11-09).
 - [x] Affichage (`?v=33`, demande d'Enguy) : ordre **classe · sous-classe · ascendance · communauté** partout (liste des persos, fiche, formulaires) = ordre de `CHAMPS_LISTE` ; `resumeIdentite()` partagée liste + fiche. Niveau dans une **pastille ronde** à droite du nom (`pastilleNiveau()`, CSS `.ligne-nom` flex + `.niveau` `border-radius: 50%`).
+- [x] Étape 3 (`?v=34`) : capacités sur les entrées des 4 listes. Sauvegarde **v6** (migration 5 → 6 : `capacites: []` sur chaque entrée, via `Object.values`). `listesValides` vérifie `{ nom, texte }`.
+  - Écran d'entrée = **brouillon** : `ouvrirEntree()` copie l'entrée (`structuredClone`) dans `entreeEditee.brouillon` + `original`. Les champs écrivent dans le brouillon (`data-brouillon`, `data-cap-champ` + `data-index` ; `dataset.capChamp` : les tirets deviennent une majuscule), sans sauvegarde ni `rendre()`. « ✓ Enregistrer » copie dans la vraie liste ; « ✕ Annuler » demande confirmation s'il y a des changements (`brouillonModifie()` compare les JSON).
+  - « + Capacité » (focus auto sur le nom), ✕ par capacité (confirmation si non vide). À l'enregistrement, `capacitesPropres()` : trim, capacités vides ignorées, refus si texte sans nom.
+  - `capacitesDuPerso()` (`flatMap` sur `CHAMPS_LISTE`) : le perso ne stocke aucune capacité, on les retrouve via ses ids. Affichage provisoire sur la fiche (section Capacités, `white-space: pre-line` pour les retours à la ligne) → sera remplacé par le deck. Liste : « · N cap. » à côté de chaque entrée.
+  - Limite : le bouton retour d'Android ne passe pas par « Annuler » (l'app ne gère pas l'historique) → un brouillon non enregistré peut être perdu.
+  - Testé en simulation.
 
 ## Prochaine étape
-**V0.3 — étape 3 : capacités sur les entrées** (voir Plan V0.3). Ancien cadrage :
+**V0.3 — étape 4 : le deck** (voir Plan V0.3). Ancien cadrage :
 - Capacités d'ascendance (2) et de communauté (1) rattachées aux entrées des listes, saisies par Enguy.
 - Cartes de domaine : domaines (2 par classe), cartes saisies par Enguy (nom, domaine, niveau, coût, texte avec ses mots), 2 cartes choisies à la création.
 - Vue « deck » sur la fiche : swipe (CSS `scroll-snap`) + boutons ◀ ▶.

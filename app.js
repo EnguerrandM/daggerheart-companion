@@ -89,6 +89,16 @@ const TEXTES = {
   choisirClasseDabord: "Choisis d'abord une classe.",
   aucuneSousClasse: "Aucune sous-classe pour cette classe : ajoute-en dans ☰ Listes.",
   horsListe: (v) => `${v} (hors liste)`,
+  capacites: "Capacités",
+  capaciteN: (n) => `Capacité ${n}`,
+  nomCapacite: "Nom",
+  texteCapacite: "Texte",
+  ajouterCapacite: "+ Capacité",
+  nbCapacites: (n) => `${n} cap.`,
+  capaciteSansNom: "Une capacité a un texte mais pas de nom.",
+  confirmerRetraitCapacite: (nom) => `Retirer la capacité ${nom || "sans nom"} ?`,
+  confirmerAbandon: "Abandonner les modifications non enregistrées ?",
+  aucuneCapacite: "Aucune capacité pour l'instant : ajoute-les dans ☰ Listes (✎ sur la classe, la sous-classe, l'ascendance ou la communauté).",
   enregistrer: "✓ Enregistrer",
   annuler: "✕ Annuler",
 
@@ -239,7 +249,8 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 //   v4 : chaque carac devient { base, modif } (modificateur temporaire)
 //   v5 : + liste sousClasses (chaque entrée a un champ classe = id de sa
 //        classe) ; chaque perso reçoit sousClasse: ""
-const VERSION_DONNEES = 5;
+//   v6 : chaque entrée de liste reçoit capacites: [{ nom, texte }]
+const VERSION_DONNEES = 6;
 
 // Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
 // VERSION_DONNEES, qui ne change que quand la forme des données change.
@@ -339,6 +350,14 @@ function migrer(donnees) {
     donnees.personnages.forEach((p) => { p.sousClasse = ""; });
     donnees.version = 5;
   }
+  if (donnees.version === 5) {
+    // 5 → 6 : chaque entrée de chaque liste reçoit une liste de capacités vide.
+    // Object.values = les valeurs d'un objet (ici : les 4 tableaux de listes).
+    Object.values(donnees.listes).forEach((liste) => {
+      liste.forEach((e) => { e.capacites = []; });
+    });
+    donnees.version = 6;
+  }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -364,9 +383,12 @@ function migrer(donnees) {
 // Vérifie les listes : un objet avec les 3 tableaux attendus, chaque entrée
 // ayant au moins un id et un nom (français, ou anglais pour les anciennes entrées).
 function listesValides(l) {
+  const capaciteOk = (c) => typeof c === "object" && c !== null
+    && typeof c.nom === "string" && typeof c.texte === "string";
   const entreeOk = (e) => typeof e === "object" && e !== null
     && typeof e.id === "string"
-    && (typeof e.fr === "string" || typeof e.en === "string");
+    && (typeof e.fr === "string" || typeof e.en === "string")
+    && Array.isArray(e.capacites) && e.capacites.every(capaciteOk);
   return typeof l === "object" && l !== null
     && Object.keys(LISTES_VIDES).every((cle) => Array.isArray(l[cle]) && l[cle].every(entreeOk))
     // Une sous-classe doit dire à quelle classe elle appartient.
@@ -458,9 +480,42 @@ let modeEdition = false;
 // deux "ouverts" en même temps. (État d'interface, non sauvegardé.)
 let ecran = null;
 
-// Quelle entrée de liste est en cours de modification (écran "entree") :
-// { cle: "classes", id: "seraphin" }, ou null. État d'interface.
+// Quelle entrée de liste est en cours de modification (écran "entree"), ou null :
+//   { cle, id, classe, brouillon, original }
+//   id null        = création (d'une sous-classe, rattachée à classe)
+//   brouillon      = COPIE de l'entrée que l'écran modifie à chaque frappe
+//   original       = la même copie, intacte, pour savoir s'il y a eu des changements
+// Rien ne touche la vraie liste avant "✓ Enregistrer". État d'interface.
 let entreeEditee = null;
+
+// Ouvre l'écran d'entrée : prépare le brouillon (copie profonde).
+function ouvrirEntree(cle, id, classe) {
+  const e = id ? trouverEntree(cle, id) : { fr: "", en: "", classe: classe, capacites: [] };
+  const copie = { fr: e.fr || "", en: e.en || "", capacites: structuredClone(e.capacites || []) };
+  entreeEditee = { cle, id, classe: id ? e.classe : classe, brouillon: copie, original: structuredClone(copie) };
+  ecran = "entree";
+}
+
+// Le brouillon a-t-il changé ? Comparer deux objets champ par champ est
+// long ; on compare leur version texte JSON (assez fiable ici).
+function brouillonModifie() {
+  return entreeEditee
+    && JSON.stringify(entreeEditee.brouillon) !== JSON.stringify(entreeEditee.original);
+}
+
+// Nettoie les capacités du brouillon avant d'enregistrer :
+// espaces en trop retirés, capacités complètement vides ignorées.
+// Renvoie le tableau propre, ou null si une capacité a un texte sans nom.
+function capacitesPropres(capacites) {
+  const propres = capacites
+    .map((c) => ({ nom: c.nom.trim(), texte: c.texte.trim() }))
+    .filter((c) => c.nom || c.texte);
+  if (propres.some((c) => !c.nom)) {
+    alert(TEXTES.capaciteSansNom);
+    return null;
+  }
+  return propres;
+}
 
 // Champs pour lesquels le MJ vient de choisir "Other…" mais n'a encore rien
 // tapé. Sans ça, un champ vide afficherait "— Choose —" et la saisie libre
@@ -597,7 +652,8 @@ function ajouterEntree(cle, fr, en, extra = {}) {
     alert(TEXTES.doublon(fr));
     return false;
   }
-  listes[cle].push({ id: idLibre(cle, fr), fr: fr, en: en, ...extra });
+  // capacites: [] d'abord, puis ...extra (qui peut le remplacer).
+  listes[cle].push({ id: idLibre(cle, fr), fr: fr, en: en, capacites: [], ...extra });
   sauvegarder();
   return true;
 }
@@ -607,7 +663,7 @@ function ajouterEntree(cle, fr, en, extra = {}) {
 // Table : on peut changer tout le contenu de la ligne, mais si on
 // renommait la ligne, tout ce qui pointe dessus serait cassé.
 // Résultat : renommer une classe met à jour tous les persos d'un coup.
-function modifierEntree(cle, id, fr, en) {
+function modifierEntree(cle, id, fr, en, capacites) {
   fr = fr.trim();
   en = en.trim();
   if (!fr) {
@@ -622,6 +678,7 @@ function modifierEntree(cle, id, fr, en) {
   if (!entree) return false;
   entree.fr = fr;
   entree.en = en;
+  entree.capacites = capacites;
   sauvegarder();
   return true;
 }
@@ -835,29 +892,48 @@ function afficherAPropos() {
 // "✕ Annuler" n'a donc rien à défaire, il suffit de quitter l'écran.
 // (Cet écran accueillera les capacités à l'étape 3.)
 function afficherEditionEntree() {
-  const { cle, id, classe } = entreeEditee;
-  // id null = on CRÉE une entrée (une sous-classe), sinon on la modifie.
-  const e = id ? trouverEntree(cle, id) : { fr: "", en: "", classe: classe };
+  const { cle, id, classe, brouillon: b } = entreeEditee;
   const titre = id
-    ? TEXTES.titreEditionEntree(echapper(nomEntree(e)))
+    ? TEXTES.titreEditionEntree(echapper(nomEntree(trouverEntree(cle, id))))
     : TEXTES.titreNouvelleSousClasse(echapper(nomChoix("classes", classe)));
-  // Pour une sous-classe existante, on rappelle sa classe sous le titre.
+  // Pour une sous-classe, on rappelle sa classe sous le titre.
   const sousTitre = id && cle === "sousClasses"
-    ? `<p class="aide">${TEXTES.sousClasseDe(echapper(nomChoix("classes", e.classe)))}</p>`
+    ? `<p class="aide">${TEXTES.sousClasseDe(echapper(nomChoix("classes", classe)))}</p>`
     : "";
+
+  // Une carte d'édition par capacité. data-index = sa place dans le tableau
+  // (comme l'index d'un ForEach), pour savoir laquelle modifier/retirer.
+  const blocsCapacites = b.capacites.map((c, i) => `
+    <div class="capacite-edition">
+      <div class="barre">
+        <span class="label-capacite">${TEXTES.capaciteN(i + 1)}</span>
+        <button class="retirer-capacite" data-action="retirer-capacite" data-index="${i}">✕</button>
+      </div>
+      <label class="champ">${TEXTES.nomCapacite}
+        <input type="text" data-cap-champ="nom" data-index="${i}" value="${echapper(c.nom)}">
+      </label>
+      <label class="champ">${TEXTES.texteCapacite}
+        <textarea rows="5" data-cap-champ="texte" data-index="${i}">${echapper(c.texte)}</textarea>
+      </label>
+    </div>
+  `).join("");
+
   return `
-    <button class="retour" data-action="listes">${TEXTES.annuler}</button>
+    <button class="retour" data-action="annuler-entree">${TEXTES.annuler}</button>
     <h2>${titre}</h2>
     ${sousTitre}
     <article class="fiche">
       <label class="champ">${TEXTES.nomFr}
-        <input type="text" id="edition-fr" value="${echapper(e.fr || "")}">
+        <input type="text" data-brouillon="fr" value="${echapper(b.fr)}">
       </label>
       <label class="champ">${TEXTES.nomEn}
-        <input type="text" id="edition-en" value="${echapper(e.en || "")}">
+        <input type="text" data-brouillon="en" value="${echapper(b.en)}">
       </label>
-      <button class="ajouter" data-action="enregistrer-entree">${TEXTES.enregistrer}</button>
+      <h3>${TEXTES.capacites}</h3>
+      ${blocsCapacites}
+      <button class="petit-ajout" data-action="ajouter-capacite">${TEXTES.ajouterCapacite}</button>
     </article>
+    <button class="ajouter" data-action="enregistrer-entree">${TEXTES.enregistrer}</button>
   `;
 }
 
@@ -872,7 +948,7 @@ function trier(entrees) {
 function ligneEntree(cle, e, classeEnPlus) {
   return `
     <li class="entree ${classeEnPlus}">
-      <span>${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}</span>
+      <span>${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}${e.capacites.length ? ` <span class="secondaire">· ${TEXTES.nbCapacites(e.capacites.length)}</span>` : ""}</span>
       <span class="boutons-entree">
         <button class="editer" data-action="editer-entree" data-cle="${cle}" data-id="${e.id}">✎</button>
         <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
@@ -1095,10 +1171,44 @@ function afficherPersonnage(perso) {
 
       <h3>${TEXTES.ressources}</h3>
       ${modeEdition ? ressourcesEdition(perso) : ressourcesLecture(perso)}
+
+      ${modeEdition ? "" : `<h3>${TEXTES.capacites}</h3>${capacitesLecture(perso)}`}
     </article>
     ${modeEdition ? `<button class="ajouter" data-action="dupliquer">${TEXTES.dupliquer}</button>` : ""}
     ${modeEdition ? `<button class="supprimer" data-action="supprimer">${TEXTES.supprimer}</button>` : ""}
   `;
+}
+
+// Toutes les capacités d'un perso, rassemblées depuis ses entrées de listes,
+// dans l'ordre de CHAMPS_LISTE (classe, sous-classe, ascendance, communauté).
+// Le perso ne STOCKE aucune capacité : on les retrouve via ses ids à chaque
+// affichage → corriger une capacité dans ☰ Listes corrige tous les persos.
+// flatMap = map, puis aplatit : [[a, b], [c]] → [a, b, c].
+// Servira aussi au deck (étape 4).
+function capacitesDuPerso(perso) {
+  return CHAMPS_LISTE.flatMap((c) => {
+    const e = trouverEntree(c.liste, perso[c.champ]);
+    if (!e) return [];   // pas choisi, texte libre ou entrée retirée
+    return e.capacites.map((cap) => ({
+      type: c.label,          // "Classe", "Ascendance"...
+      origine: nomEntree(e),  // "Gardien", "Orc"...
+      nom: cap.nom,
+      texte: cap.texte,
+    }));
+  });
+}
+
+// Affichage simple (provisoire : le deck le remplacera à l'étape 4).
+function capacitesLecture(perso) {
+  const caps = capacitesDuPerso(perso);
+  if (caps.length === 0) return `<p class="aide">${TEXTES.aucuneCapacite}</p>`;
+  return caps.map((c) => `
+    <div class="capacite">
+      <span class="type-capacite">${echapper(c.type)} · ${echapper(c.origine)}</span>
+      <strong>${echapper(c.nom)}</strong>
+      <p>${echapper(c.texte)}</p>
+    </div>
+  `).join("");
 }
 
 // Écran CRÉATION : les mêmes blocs d'édition que la correction MJ
@@ -1267,6 +1377,7 @@ function rendre() {
     const existe = entreeEditee && (entreeEditee.id
       ? trouverEntree(entreeEditee.cle, entreeEditee.id)
       : trouverEntree("classes", entreeEditee.classe));   // création : la classe parente doit exister
+    if (!existe) entreeEditee = null;
     if (existe) {
       zone.innerHTML = afficherEditionEntree();
       return;
@@ -1342,21 +1453,43 @@ document.getElementById("app").addEventListener("click", (event) => {
       entreeEditee = null;
       break;
     case "editer-entree":
-      ecran = "entree";
-      entreeEditee = { cle: bouton.dataset.cle, id: bouton.dataset.id };
+      ouvrirEntree(bouton.dataset.cle, bouton.dataset.id, null);
       break;
     case "nouvelle-sous-classe":
-      ecran = "entree";
-      entreeEditee = { cle: "sousClasses", id: null, classe: bouton.dataset.classe };
+      ouvrirEntree("sousClasses", null, bouton.dataset.classe);
       break;
+    case "annuler-entree":
+      // Filet anti fausse manip : on ne perd pas un long texte sans prévenir.
+      if (brouillonModifie() && !confirm(TEXTES.confirmerAbandon)) return;
+      ecran = "listes";
+      entreeEditee = null;
+      break;
+    case "ajouter-capacite":
+      entreeEditee.brouillon.capacites.push({ nom: "", texte: "" });
+      rendre();
+      // Confort : on place le curseur dans le nom de la nouvelle capacité.
+      // querySelectorAll + [length - 1] = le DERNIER champ "nom".
+      {
+        const noms = document.querySelectorAll('[data-cap-champ="nom"]');
+        noms[noms.length - 1].focus();
+      }
+      return;
+    case "retirer-capacite": {
+      const i = Number(bouton.dataset.index);
+      const c = entreeEditee.brouillon.capacites[i];
+      // Confirmation seulement si la capacité contient quelque chose.
+      if ((c.nom.trim() || c.texte.trim()) && !confirm(TEXTES.confirmerRetraitCapacite(c.nom.trim()))) return;
+      entreeEditee.brouillon.capacites.splice(i, 1);   // splice = Remove Index
+      break;
+    }
     case "enregistrer-entree": {
-      const fr = document.getElementById("edition-fr").value;
-      const en = document.getElementById("edition-en").value;
-      const { cle, id, classe } = entreeEditee;
+      const { cle, id, classe, brouillon } = entreeEditee;
+      const capacites = capacitesPropres(brouillon.capacites);
+      if (!capacites) return;
       // id null = création (sous-classe), sinon modification.
       const ok = id
-        ? modifierEntree(cle, id, fr, en)
-        : ajouterEntree(cle, fr, en, { classe: classe });
+        ? modifierEntree(cle, id, brouillon.fr, brouillon.en, capacites)
+        : ajouterEntree(cle, brouillon.fr, brouillon.en, { classe: classe, capacites: capacites });
       // En cas d'erreur (nom vide, doublon), on RESTE sur l'écran
       // (sans rendre(), pour ne pas effacer ce qui a été tapé).
       if (!ok) return;
@@ -1481,6 +1614,18 @@ document.getElementById("app").addEventListener("click", (event) => {
 // On met à jour la donnée et on sauvegarde, mais on NE rappelle PAS
 // rendre() : ça reconstruirait le champ et fermerait le clavier.
 document.getElementById("app").addEventListener("input", (event) => {
+  const d = event.target.dataset;
+  // Écran d'entrée : on écrit dans le BROUILLON (pas dans la liste, pas de
+  // sauvegarde) et sans rendre() : on ne redessine pas pendant la frappe.
+  if (d.brouillon) {
+    entreeEditee.brouillon[d.brouillon] = event.target.value;
+    return;
+  }
+  if (d.capChamp) {   // data-cap-champ devient dataset.capChamp (tirets → majuscule)
+    entreeEditee.brouillon.capacites[Number(d.index)][d.capChamp] = event.target.value;
+    return;
+  }
+
   const champ = event.target.dataset.champ;
   if (!champ) return;
   const perso = trouverPerso(persoOuvertId);

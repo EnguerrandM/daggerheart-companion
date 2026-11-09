@@ -100,7 +100,7 @@
       color: var(--or);
       font-size: 0.9rem;
     }
-    .champ input, .champ select {
+    .champ input, .champ select, .champ textarea {
       padding: 0.6rem;
       border: 1px solid var(--bordure);
       border-radius: 8px;
@@ -140,6 +140,35 @@
     }
     .entree .secondaire { color: var(--texte-doux); font-size: 0.9rem; }
     .boutons-entree { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .champ textarea { font-family: inherit; resize: vertical; line-height: 1.4; }
+
+    /* ===== Capacités ===== */
+    .capacite-edition {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+    }
+    .capacite-edition .barre { align-items: center; margin-bottom: 0.5rem; }
+    .label-capacite { color: var(--texte-doux); font-size: 0.9rem; }
+    .retirer-capacite {
+      width: 2.25rem;
+      height: 2.25rem;
+      border: 1px solid var(--danger);
+      border-radius: 8px;
+      background: none;
+      color: var(--danger);
+    }
+    .capacite {
+      margin-bottom: 0.75rem;
+      padding: 0.75rem;
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+      background: var(--carte-creux);
+    }
+    .capacite strong { display: block; color: var(--or); margin: 0.2rem 0; }
+    .capacite p { margin: 0; white-space: pre-line; }   /* garde les retours à la ligne tapés */
+    .type-capacite { color: var(--texte-doux); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
     .sous-entree { margin-left: 1.25rem; }   /* sous-classes décalées sous leur classe */
     li.sous-entree:not(.entree) { list-style: none; padding: 0.4rem 0; border-bottom: 1px solid var(--bordure); }
     .petit-ajout {
@@ -248,7 +277,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=33" defer></script>
+  <script src="app.js?v=34" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
