@@ -98,6 +98,8 @@ const TEXTES = {
   capaciteSansNom: "Une capacité a un texte mais pas de nom.",
   confirmerRetraitCapacite: (nom) => `Retirer la capacité ${nom || "sans nom"} ?`,
   confirmerAbandon: "Abandonner les modifications non enregistrées ?",
+  ongletFiche: "Fiche",
+  compteurCapacite: (i, n) => `Capacité ${i} / ${n}`,
   precedente: "Carte précédente",
   suivante: "Carte suivante",
   aucuneCapacite: "Aucune capacité pour l'instant : ajoute-les dans ☰ Listes (✎ sur la classe, la sous-classe, l'ascendance ou la communauté).",
@@ -494,6 +496,13 @@ let entreeEditee = null;
 // gardé à part car rendre() redessine toute la fiche à chaque +/− :
 // sans ça, le deck reviendrait à la 1re carte à chaque clic sur les PV.
 let indexDeck = 0;
+
+// Carte visée par un bouton ◀ ▶ pendant son animation (null sinon).
+// Pendant l'animation, la position passe par des valeurs intermédiaires :
+// sans ce verrou, le compteur reculerait et un 2e tap rapide irait au
+// mauvais endroit.
+let cibleDeck = null;
+let minuterieDeck = null;
 
 // Ouvre l'écran d'entrée : prépare le brouillon (copie profonde).
 function ouvrirEntree(cle, id, classe) {
@@ -1170,17 +1179,15 @@ function afficherPersonnage(perso) {
         : `<button class="retour" data-action="retour">${TEXTES.retour}</button>`}
       <button class="retour" data-action="editer">${modeEdition ? TEXTES.termine : TEXTES.correctionMj}</button>
     </div>
-    <article class="fiche">
-      ${modeEdition ? identiteEdition(perso) : identiteLecture(perso)}
-
-      <h3>${TEXTES.caracteristiques}</h3>
-      ${modeEdition ? caracsEdition(perso) : caracsJeu(perso)}
-
-      <h3>${TEXTES.ressources}</h3>
-      ${modeEdition ? ressourcesEdition(perso) : ressourcesLecture(perso)}
-
-      ${modeEdition ? "" : `<h3>${TEXTES.capacites}</h3>${afficherDeck(perso)}`}
-    </article>
+    ${modeEdition ? `
+      <article class="fiche">
+        ${identiteEdition(perso)}
+        <h3>${TEXTES.caracteristiques}</h3>
+        ${caracsEdition(perso)}
+        <h3>${TEXTES.ressources}</h3>
+        ${ressourcesEdition(perso)}
+      </article>
+    ` : afficherDeck(perso)}
     ${modeEdition ? `<button class="ajouter" data-action="dupliquer">${TEXTES.dupliquer}</button>` : ""}
     ${modeEdition ? `<button class="supprimer" data-action="supprimer">${TEXTES.supprimer}</button>` : ""}
   `;
@@ -1205,28 +1212,40 @@ function capacitesDuPerso(perso) {
   });
 }
 
-// LE DECK : les capacités en cartes côte à côte, qu'on fait défiler.
-// Le défilement est géré par le NAVIGATEUR (CSS scroll-snap : le doigt
-// glisse, la carte se "cale" toute seule). Le JS ne fait que les boutons
-// ◀ ▶ et le compteur "2 / 6".
-// data-type = le type de la carte (classe, sousClasse...) → couleur du badge en CSS.
+// LE DECK (mode jeu) : la FICHE est la 1re carte, tout à gauche ; les
+// capacités suivent. On glisse au doigt de carte en carte.
+// Le défilement est géré par le NAVIGATEUR (CSS scroll-snap : la carte se
+// "cale" toute seule). Le JS ne fait que les boutons ◀ ▶ et le compteur.
+// La correction MJ et la création restent HORS deck (écran plein).
+// data-type = le type de la carte (classe, sousClasse...) → couleur en CSS.
 function afficherDeck(perso) {
   const caps = capacitesDuPerso(perso);
-  if (caps.length === 0) return `<p class="aide">${TEXTES.aucuneCapacite}</p>`;
+  const carteFiche = `
+    <article class="fiche carte-deck">
+      ${identiteLecture(perso)}
+      <h3>${TEXTES.caracteristiques}</h3>
+      ${caracsJeu(perso)}
+      <h3>${TEXTES.ressources}</h3>
+      ${ressourcesLecture(perso)}
+      ${caps.length === 0 ? `<p class="aide">${TEXTES.aucuneCapacite}</p>` : ""}
+    </article>
+  `;
   const cartes = caps.map((c) => `
-    <div class="carte-capacite" data-type="${c.champ}">
+    <div class="carte-deck carte-capacite" data-type="${c.champ}">
       <span class="type-capacite">${echapper(c.type)} · ${echapper(c.origine)}</span>
       <strong>${echapper(c.nom)}</strong>
       <p>${echapper(c.texte)}</p>
     </div>
   `).join("");
+  // La barre de navigation est AU-DESSUS (la fiche est longue : en bas,
+  // elle serait loin) et "collante" (sticky) quand on fait défiler la page.
   return `
-    <div class="deck" id="deck">${cartes}</div>
-    <div class="nav-deck">
+    <div class="nav-deck" id="nav-deck">
       <button data-action="deck-precedente" aria-label="${TEXTES.precedente}">◀</button>
-      <span id="compteur-deck">1 / ${caps.length}</span>
+      <span id="compteur-deck">${TEXTES.ongletFiche}</span>
       <button data-action="deck-suivante" aria-label="${TEXTES.suivante}">▶</button>
     </div>
+    <div class="deck" id="deck">${carteFiche}${cartes}</div>
   `;
 }
 
@@ -1240,15 +1259,34 @@ function pasDeck(deck) {
 
 // Met à jour le compteur et les boutons SANS tout redessiner
 // (on modifie juste 3 éléments : bien plus léger que rendre()).
-function majDeck() {
+// force = l'index voulu (boutons) ; sinon on le déduit de la position
+// actuelle (glissé au doigt). Pendant l'animation d'un bouton, la position
+// est encore l'ancienne : d'où ce paramètre, pour ne pas revenir en arrière.
+function majDeck(force) {
   const deck = document.getElementById("deck");
   if (!deck) return;
   const n = deck.children.length;
+  const avant = indexDeck;
   // Math.round = la carte la plus proche de la position actuelle.
-  indexDeck = borner(Math.round(deck.scrollLeft / pasDeck(deck)), 0, n - 1);
-  document.getElementById("compteur-deck").textContent = `${indexDeck + 1} / ${n}`;
+  indexDeck = force !== undefined ? force : borner(Math.round(deck.scrollLeft / pasDeck(deck)), 0, n - 1);
+  // Carte 0 = "Fiche" ; ensuite "Capacité 2 / 5" (la fiche ne compte pas).
+  document.getElementById("compteur-deck").textContent =
+    indexDeck === 0 ? TEXTES.ongletFiche : TEXTES.compteurCapacite(indexDeck, n - 1);
   document.querySelector('[data-action="deck-precedente"]').disabled = indexDeck === 0;
   document.querySelector('[data-action="deck-suivante"]').disabled = indexDeck === n - 1;
+  if (indexDeck !== avant) remonterAuDeck();
+}
+
+// La fiche est longue, une capacité courte : si on a fait défiler la page
+// vers le bas puis changé de carte, on se retrouverait face à du vide.
+// On remonte donc en haut du deck (juste sous la barre collante).
+// getBoundingClientRect().top = position de l'élément par rapport au HAUT
+// DE L'ÉCRAN (négatif = il a disparu au-dessus).
+function remonterAuDeck() {
+  const deck = document.getElementById("deck");
+  const nav = document.getElementById("nav-deck");
+  const ecart = deck.getBoundingClientRect().top - nav.offsetHeight;
+  if (ecart < 0) window.scrollBy({ top: ecart, behavior: "smooth" });
 }
 
 // Va à la carte i. smooth = animation ; sinon saut immédiat.
@@ -1256,9 +1294,16 @@ function allerCarte(i, smooth) {
   const deck = document.getElementById("deck");
   if (!deck) return;
   const n = deck.children.length;
-  indexDeck = borner(i, 0, n - 1);
-  deck.scrollTo({ left: indexDeck * pasDeck(deck), behavior: smooth ? "smooth" : "auto" });
-  majDeck();
+  const cible = borner(i, 0, n - 1);
+  if (smooth) {
+    cibleDeck = cible;
+    // Filet : si l'animation est interrompue (doigt), on lève le verrou.
+    // clearTimeout annule la minuterie précédente (taps rapides).
+    clearTimeout(minuterieDeck);
+    minuterieDeck = setTimeout(() => { cibleDeck = null; majDeck(); }, 700);
+  }
+  deck.scrollTo({ left: cible * pasDeck(deck), behavior: smooth ? "smooth" : "auto" });
+  majDeck(cible);
 }
 
 // Écran CRÉATION : les mêmes blocs d'édition que la correction MJ
@@ -1678,7 +1723,14 @@ document.getElementById("app").addEventListener("click", (event) => {
 // #app, contrairement à "click". Le true final = écouter en phase de
 // "capture" (en descendant vers l'élément), ce qui marche quand même.
 document.getElementById("app").addEventListener("scroll", (event) => {
-  if (event.target.id === "deck") majDeck();
+  if (event.target.id !== "deck") return;
+  if (cibleDeck !== null) {
+    // Animation d'un bouton en cours : on attend d'être arrivé.
+    const deck = event.target;
+    if (Math.abs(deck.scrollLeft - cibleDeck * pasDeck(deck)) > 2) return;
+    cibleDeck = null;
+  }
+  majDeck();
 }, true);
 
 document.getElementById("app").addEventListener("input", (event) => {

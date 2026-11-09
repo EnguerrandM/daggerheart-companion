@@ -194,6 +194,11 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
   - JS minimal : ◀ ▶ (`allerCarte()` → `scrollTo` smooth), compteur « 2 / 6 » + boutons désactivés aux bouts (`majDeck()`, met à jour 3 éléments sans `rendre()`). Le défilement au doigt est géré par le navigateur ; on l'écoute avec `addEventListener("scroll", …, true)` : **scroll ne remonte pas** (pas de bubbling), le `true` = phase de capture.
   - Piège évité : `rendre()` redessine toute la fiche à chaque +/− → le deck revenait à la 1re carte. État `indexDeck` + `allerCarte(indexDeck, false)` à la fin de `rendre()`. Remis à 0 quand on ouvre un autre perso.
   - Testé en simulation (boutons, compteur, bouts, position conservée après +Stress).
+- [x] Deck v2 (`?v=36`, précision d'Enguy) : **la fiche est la 1re carte du deck**, tout à gauche ; on glisse vers les capacités. Mode jeu seulement : correction MJ et création restent en écran plein.
+  - Deck en pleine largeur : marges négatives (`margin: 0 -1.5rem`) qui annulent le padding du body + `scroll-padding` → la carte garde toute la largeur et on aperçoit le bord des voisines. Cartes `flex: 0 0 100%`, `align-items: flex-start` (chaque carte garde sa hauteur).
+  - Barre ◀ « Fiche » / « Capacité 2 / 6 » ▶ **au-dessus** du deck, `position: sticky` (reste collée en haut). `remonterAuDeck()` : si on a défilé vers le bas et qu'on change de carte, on remonte en haut du deck (`getBoundingClientRect`).
+  - Verrou `cibleDeck` pendant l'animation d'un bouton (sinon le compteur reculait et un 2e tap rapide allait au mauvais endroit), levé à l'arrivée ou après 700 ms (`setTimeout`/`clearTimeout`).
+  - Limite connue : le deck est aussi haut que sa plus haute carte (la fiche) → espace vide sous une capacité courte.
 
 ## Prochaine étape
 **V0.3 — validation du critère de réussite sur téléphone**, puis cadrage V0.4 (voir Plan V0.3). Ancien cadrage :
