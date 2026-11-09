@@ -79,6 +79,12 @@ const TEXTES = {
   nomManquant: "Enter a name in English first.",
   doublon: (nom) => `"${nom}" is already in this list.`,
   confirmerRetrait: (nom) => `Remove ${nom} from the list?`,
+
+  // Menus déroulants de la fiche
+  choisir: "— Choose —",
+  autre: "Other…",
+  saisieLibre: "Type it here",
+  listeVideAide: "This list is empty: fill it in ☰ Lists.",
 };
 
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
@@ -94,9 +100,9 @@ const personnagesParDefaut = [
   {
     id: "perso-1",          // identifiant unique : sert à retrouver LE bon perso
     nom: "Lydia",
-    ascendance: "?",
-    communaute: "?",
-    classe: "?",
+    ascendance: "",
+    communaute: "",
+    classe: "",
     niveau: 1,
     caracs: { agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 },
     ressources: {
@@ -108,9 +114,9 @@ const personnagesParDefaut = [
   {
     id: "perso-2",
     nom: "Brom",
-    ascendance: "?",
-    communaute: "?",
-    classe: "?",
+    ascendance: "",
+    communaute: "",
+    classe: "",
     niveau: 1,
     caracs: { agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 },
     ressources: {
@@ -148,6 +154,17 @@ const LISTES = [
   ["ascendances", TEXTES.listeAscendances],
   ["communautes", TEXTES.listeCommunautes],
 ];
+
+// Quel champ d'un perso se choisit dans quelle liste : [champ, liste, label].
+const CHAMPS_LISTE = [
+  ["ascendance", "ascendances", TEXTES.ascendance],
+  ["communaute", "communautes", TEXTES.communaute],
+  ["classe", "classes", TEXTES.classe],
+];
+
+// Valeur spéciale de l'option "Other…" dans les menus. Elle ne peut pas
+// entrer en collision avec un vrai id : versId() ne fabrique jamais de "_".
+const VALEUR_AUTRE = "__autre__";
 
 // --- 1b. LA SAUVEGARDE : localStorage ------------------------
 // localStorage = un petit coffre dans le navigateur, propre à ce site,
@@ -314,6 +331,12 @@ let modeEdition = false;
 // Est-on sur l'écran de gestion des listes ? (état d'interface, non sauvegardé)
 let ecranListes = false;
 
+// Champs pour lesquels le MJ vient de choisir "Other…" mais n'a encore rien
+// tapé. Sans ça, un champ vide afficherait "— Choose —" et la saisie libre
+// disparaîtrait aussitôt. Un Set = une collection SANS doublons (= un Set
+// en Blueprint) : .add(), .delete(), .has(). État d'interface, non sauvegardé.
+let champsAutre = new Set();
+
 // Retrouver un perso par son id : .find parcourt le tableau et renvoie
 // le premier élément qui vérifie la condition (= un "Find" sur un Array
 // avec une condition, ou un ForEach + Branch + Break).
@@ -330,9 +353,9 @@ function nouveauPerso() {
   return {
     id: "perso-" + Date.now(),
     nom: TEXTES.nomNouveauPerso,
-    ascendance: "?",
-    communaute: "?",
-    classe: "?",
+    ascendance: "",
+    communaute: "",
+    classe: "",
     niveau: 1,
     caracs: { agility: 0, strength: 0, finesse: 0, instinct: 0, presence: 0, knowledge: 0 },
     ressources: {
@@ -407,6 +430,29 @@ function retirerEntree(cle, id) {
   sauvegarder();
 }
 
+// COMMENT LIRE ascendance / communaute / classe d'un perso :
+//   - "" ou "?"              → pas encore choisi
+//   - un id d'une liste      → on affiche le nom de cette entrée
+//   - autre chose            → texte libre ("Other…"), affiché tel quel
+// Pas de migration nécessaire : les anciens textes libres restent valables.
+// ⚠️ Dette assumée : un même champ contient soit un id, soit du texte.
+// Si on retire une entrée de la liste, son id devient un texte libre
+// "orphelin" (ex. "sea-born") : moche mais rien ne casse.
+function estVide(valeur) {
+  return valeur === "" || valeur === "?";
+}
+
+function trouverEntree(cleListe, id) {
+  return listes[cleListe].find((e) => e.id === id);
+}
+
+// Le texte à afficher pour ce champ. V0.3 : on choisira e.en ou e.fr selon la langue.
+function nomChoix(cleListe, valeur) {
+  if (estVide(valeur)) return "?";
+  const entree = trouverEntree(cleListe, valeur);
+  return entree ? entree.en : valeur;
+}
+
 // --- 1d. LES BORNES -----------------------------------------
 // Regroupées ici pour les retrouver facilement.
 // ⚠️ Valeurs PROVISOIRES, à vérifier dans les règles officielles.
@@ -453,7 +499,7 @@ function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
       <strong>${echapper(nomAffiche(p))}</strong>
-      <span>${echapper(p.classe)} · ${echapper(p.ascendance)} · ${TEXTES.niveauCourt(p.niveau)}</span>
+      <span>${echapper(nomChoix("classes", p.classe))} · ${echapper(nomChoix("ascendances", p.ascendance))} · ${TEXTES.niveauCourt(p.niveau)}</span>
       <span>${RESSOURCES.map(([cle, label]) => `${label} ${p.ressources[cle].actuel}/${p.ressources[cle].max}`).join(" · ")}</span>
     </button>
   `).join("");
@@ -511,7 +557,7 @@ function afficherGestionListes() {
 function identiteLecture(perso) {
   return `
     <h2>${echapper(nomAffiche(perso))}</h2>
-    <p>${echapper(perso.ascendance)} · ${echapper(perso.communaute)} · ${echapper(perso.classe)} · ${TEXTES.niveauLong(perso.niveau)}</p>
+    <p>${CHAMPS_LISTE.map(([champ, cleListe]) => echapper(nomChoix(cleListe, perso[champ]))).join(" · ")} · ${TEXTES.niveauLong(perso.niveau)}</p>
   `;
 }
 
@@ -525,13 +571,41 @@ function champTexte(perso, champ, label) {
   `;
 }
 
+// Un menu déroulant (<select>) rempli depuis une liste, + "Other…".
+// data-choix = quel champ du perso ce menu modifie (comme data-champ).
+// Si "Other…" est choisi, un champ texte libre apparaît dessous.
+function champChoix(perso, champ, cleListe, label) {
+  const valeur = perso[champ];
+  const entree = trouverEntree(cleListe, valeur);
+  // On est en "Other…" si le MJ vient de le choisir, OU si la valeur
+  // est un texte qui ne correspond à aucune entrée de la liste.
+  const autre = champsAutre.has(champ) || (!estVide(valeur) && !entree);
+
+  const triees = [...listes[cleListe]].sort((a, b) => a.en.localeCompare(b.en));
+  // selected = l'option affichée par défaut. ${cond ? "selected" : ""}
+  // n'écrit le mot que pour la bonne option.
+  const options = triees.map((e) =>
+    `<option value="${e.id}" ${entree === e ? "selected" : ""}>${echapper(e.en)}</option>`
+  ).join("");
+
+  return `
+    <label class="champ">${label}
+      <select data-choix="${champ}">
+        <option value="" ${!entree && !autre ? "selected" : ""}>${TEXTES.choisir}</option>
+        ${options}
+        <option value="${VALEUR_AUTRE}" ${autre ? "selected" : ""}>${TEXTES.autre}</option>
+      </select>
+      ${autre ? `<input type="text" data-champ="${champ}" placeholder="${TEXTES.saisieLibre}" value="${echapper(estVide(valeur) ? "" : valeur)}">` : ""}
+      ${triees.length === 0 ? `<span class="aide">${TEXTES.listeVideAide}</span>` : ""}
+    </label>
+  `;
+}
+
 // Bloc identité, version ÉDITION.
 function identiteEdition(perso) {
   return `
     ${champTexte(perso, "nom", TEXTES.nom)}
-    ${champTexte(perso, "ascendance", TEXTES.ascendance)}
-    ${champTexte(perso, "communaute", TEXTES.communaute)}
-    ${champTexte(perso, "classe", TEXTES.classe)}
+    ${CHAMPS_LISTE.map(([champ, cleListe, label]) => champChoix(perso, champ, cleListe, label)).join("")}
     <label class="champ">${TEXTES.niveau}
       <input type="number" inputmode="numeric" min="1" max="10" data-champ="niveau" value="${perso.niveau}">
     </label>
@@ -712,11 +786,13 @@ document.getElementById("app").addEventListener("click", (event) => {
   switch (bouton.dataset.action) {
     case "ouvrir":
       persoOuvertId = bouton.dataset.id;
+      champsAutre.clear();
       break;
     case "retour":
       persoOuvertId = null;
       modeEdition = false;
       ecranListes = false;
+      champsAutre.clear();
       break;
     case "listes":
       ecranListes = true;
@@ -752,6 +828,7 @@ document.getElementById("app").addEventListener("click", (event) => {
       document.getElementById("fichier-import").click();
       break;
     case "editer":
+      champsAutre.clear();
       modeEdition = !modeEdition; // ! = NOT : bascule true ↔ false (= Flip Flop)
       break;
     case "ressource":
@@ -807,6 +884,27 @@ document.getElementById("app").addEventListener("input", (event) => {
     perso[champ] = event.target.value;
   }
   sauvegarder();
+});
+
+// --- 6b. LES MENUS DÉROULANTS --------------------------------
+// "change" se déclenche quand on choisit une option dans un <select>.
+// Ici on PEUT rappeler rendre() : pas de clavier ouvert à fermer, et il
+// faut faire apparaître / disparaître le champ texte de "Other…".
+document.getElementById("app").addEventListener("change", (event) => {
+  const champ = event.target.dataset.choix;
+  if (!champ) return;   // ex. un champ texte qui perd le focus : pas pour nous
+  const perso = trouverPerso(persoOuvertId);
+  const valeur = event.target.value;
+
+  if (valeur === VALEUR_AUTRE) {
+    champsAutre.add(champ);
+    perso[champ] = "";        // le MJ va taper son texte dans le champ libre
+  } else {
+    champsAutre.delete(champ);
+    perso[champ] = valeur;    // un id de la liste, ou "" pour "— Choose —"
+  }
+  sauvegarder();
+  rendre();
 });
 
 // --- 7. LE FICHIER CHOISI POUR L'IMPORT ----------------------

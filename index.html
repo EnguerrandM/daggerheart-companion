@@ -100,7 +100,7 @@
       color: var(--or);
       font-size: 0.9rem;
     }
-    .champ input {
+    .champ input, .champ select {
       padding: 0.6rem;
       border: 1px solid var(--bordure);
       border-radius: 8px;
@@ -149,6 +149,7 @@
       font-size: 1rem;
     }
     .vide { color: var(--texte-doux); font-style: italic; }
+    .aide { color: var(--texte-doux); font-size: 0.85rem; font-style: italic; }
   </style>
 </head>
 <body>
@@ -167,7 +168,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=21" defer></script>
+  <script src="app.js?v=22" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
