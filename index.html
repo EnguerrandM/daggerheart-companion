@@ -187,21 +187,22 @@
        - "in oklab" : le mélange se calcule dans un espace de couleur
          "perceptuel" → le milieu est un vrai mélange des deux, pas un gris
          boueux (le défaut, en sRGB) ni une 3e teinte.
-       - Les coins sont plus forts (60 %) que le centre (30 %) : la couleur
-         se sent dans les coins, le texte reste lisible au milieu.
        - Fond NEUTRE (gris très sombre) dessous : avant, c'était le sarcelle
          de l'app qui ressortait au centre comme une couleur en plus.
-       --milieu = le mélange 50/50 des deux couleurs (color-mix).
        Par défaut (classe sans domaines) : l'or de l'app. */
     .carte-capacite {
       --d1: var(--or);
       --d2: var(--or);
-      --milieu: color-mix(in oklab, var(--d1), var(--d2));
       /* 2 calques séparés (dégradé de couleur + fond neutre) : on doit
          pouvoir donner à CHACUN sa zone (padding-box) pour la carte de classe. */
+      /* Transition COURTE : chaque couleur tient sa moitié (60 % dans le
+         coin → 40 % près du centre), puis bascule vite entre 42 % et 58 %
+         de la diagonale → on traverse à peine le mélange (gris si les
+         couleurs sont opposées). */
       --calque-couleur: linear-gradient(in oklab 135deg,
           color-mix(in srgb, var(--d1) 60%, transparent) 0%,
-          color-mix(in srgb, var(--milieu) 30%, transparent) 50%,
+          color-mix(in srgb, var(--d1) 40%, transparent) 42%,
+          color-mix(in srgb, var(--d2) 40%, transparent) 58%,
           color-mix(in srgb, var(--d2) 60%, transparent) 100%);
       --calque-fond: linear-gradient(160deg, #1c1c1f, #0e0e10);
       display: flex;
@@ -375,7 +376,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=38" defer></script>
+  <script src="app.js?v=39" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
