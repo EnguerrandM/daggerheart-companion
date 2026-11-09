@@ -93,7 +93,7 @@ Tout le reste est hors périmètre pour la V0.1.
 2. Devoirs Enguy (sans code) : lire la licence DPCGL (mentions obligatoires, formats autorisés). ~~Choisir FR ou EN~~ → décidé : **EN** (noms du SRD + interface).
 3. ~~Fichier de référence dans le dépôt~~ → **listes LOCALES** (classes, ascendances, communautés) saisies par le MJ dans un écran de gestion (ajouter/supprimer), stockées en localStorage + incluses dans l'export JSON. Les `<select>` se remplissent depuis ces listes, avec option « Other ». Aucun contenu SRD dans le dépôt tant que Darrington Press n'a pas répondu. Si feu vert : on livrera une liste officielle en plus.
 4. Écran de création → validation → identité verrouillée ; le mode ✎ devient « Correction MJ ».
-5. Modificateurs de caracs `{ base, modif }` → 1re vraie migration (v1 → v2).
+5. Modificateurs de caracs `{ base, modif }` → migration v3 → v4 (v2 = listes, v3 = brouillons).
 - Repoussé en V0.3 : montée de niveau ; traduction FR de l'interface et des listes (choix de langue par le joueur, FR/EN uniquement).
 - Décisions langue (2026-11-08) : un perso stocke un **identifiant** (`classe: "guardian"`), jamais le nom affiché ; données de référence en **un seul fichier**, une ligne par entrée avec les deux langues (`{ id, en, fr }`) ; Enguy n'a pas besoin de garder les persos actuels → pas de migration des anciens textes libres FR.
 
@@ -121,6 +121,12 @@ Tout le reste est hors périmètre pour la V0.1.
 - Pas d'édition d'une entrée pour l'instant : retirer puis rajouter.
 - [x] Étape 3c (`?v=22`) : en mode Edit, ascendance / communauté / classe = `<select>` (`champChoix()`, constante `CHAMPS_LISTE`) rempli depuis les listes + « — Choose — » + « Other… » (valeur `__autre__`, impossible comme id) qui fait apparaître un champ texte libre. Écouteur `change` sur `data-choix` → sauvegarde + `rendre()`. `champsAutre` = un `Set` (état d'interface) pour garder « Other… » affiché tant que rien n'est tapé. Affichage via `nomChoix()`. Nouveaux persos : champs `""` au lieu de `"?"` (les deux = « pas choisi »). Testé en simulation.
 - ⚠️ Dette assumée : le même champ contient SOIT un id de liste, SOIT du texte libre. Pas de migration nécessaire, mais : une entrée retirée laisse un id « orphelin » affiché brut (ex. `seer`) ; un texte libre identique à un id (ex. taper « seer ») se raccroche à l'entrée. À reprendre si ça gêne (champs séparés `classeId` / `classeTexte` + migration).
+- ✅ Étape 3 validée sur téléphone (2026-11-09).
+- [x] Étape 4 (`?v=23`) : brouillon / création / correction MJ. Choix d'Enguy : validation = nom + ascendance + communauté + classe obligatoires ; « ✎ GM fix » protégé par confirmation ; un brouillon quitté reste dans la liste avec un badge « Draft ».
+  - Sauvegarde **v3** : champ `cree` (booléen) sur chaque perso. Migration 2 → 3 : persos existants → `cree: true` (`forEach`). `persoValide()` vérifie `cree`.
+  - `nouveauPerso()` : `nom: ""`, `cree: false`. `afficherPersonnage()` renvoie `afficherCreation()` pour un brouillon (réutilise `identiteEdition`/`caracsEdition`/`ressourcesEdition`). Action `valider` + `champsManquants()` (alerte « Missing: … »). « Other… » laissé vide compte comme manquant.
+  - En mode jeu : identité + caracs en lecture seule ; seuls les +/− de ressources et Full heal restent. Sortir de GM fix ne demande pas de confirmation. Testé en simulation (migrations v1/v2 → v3, création, refus, brouillon, confirmation).
+  - « Dupliquer » ouvre la copie en édition sans confirmation (assumé : on vient de la créer).
 
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
@@ -136,4 +142,4 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-V0.2 étape 4 : écran de création → validation → identité verrouillée ; ✎ devient « Correction MJ ».
+V0.2 étape 5 : modificateurs de caracs `{ base, modif }` → migration v3 → v4. Puis écran « About » (mention DPCGL), puis vérification du critère de réussite V0.2.

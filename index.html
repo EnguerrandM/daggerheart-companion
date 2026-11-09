@@ -150,6 +150,15 @@
     }
     .vide { color: var(--texte-doux); font-style: italic; }
     .aide { color: var(--texte-doux); font-size: 0.85rem; font-style: italic; }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: normal;
+      padding: 0.1rem 0.5rem;
+      border: 1px solid var(--texte-doux);
+      border-radius: 999px;   /* très grand rayon = pilule */
+      color: var(--texte-doux);
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -168,7 +177,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=22" defer></script>
+  <script src="app.js?v=23" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

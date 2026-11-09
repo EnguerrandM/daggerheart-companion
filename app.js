@@ -37,7 +37,6 @@ const TEXTES = {
 
   // Fiche
   retour: "← List",
-  modifier: "✎ Edit",
   termine: "✓ Done",
   niveauLong: (n) => `Level ${n}`,
   caracteristiques: "Traits",
@@ -55,7 +54,6 @@ const TEXTES = {
 
   // Valeurs par défaut
   sansNom: "Unnamed",
-  nomNouveauPerso: "New character",
   suffixeCopie: " (copy)",
 
   // Messages (alert / confirm)
@@ -85,6 +83,14 @@ const TEXTES = {
   autre: "Other…",
   saisieLibre: "Type it here",
   listeVideAide: "This list is empty: fill it in ☰ Lists.",
+
+  // Création / validation / correction MJ
+  titreCreation: "New character",
+  creer: "✓ Create character",
+  brouillon: "Draft",
+  manque: (champs) => `Missing: ${champs.join(", ")}.`,
+  correctionMj: "✎ GM fix",
+  confirmerCorrection: "Edit a finished character? (GM fix: identity, traits and max values)",
 };
 
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
@@ -104,6 +110,7 @@ const personnagesParDefaut = [
     communaute: "",
     classe: "",
     niveau: 1,
+    cree: true,
     caracs: { agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 },
     ressources: {
       pv:     { actuel: 6, max: 6 },
@@ -118,6 +125,7 @@ const personnagesParDefaut = [
     communaute: "",
     classe: "",
     niveau: 1,
+    cree: true,
     caracs: { agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 },
     ressources: {
       pv:     { actuel: 7, max: 7 },
@@ -179,7 +187,8 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 // l'étape de conversion correspondante dans migrer().
 //   v1 : { version, personnages }
 //   v2 : + listes (classes, ascendances, communautés saisies par le MJ)
-const VERSION_DONNEES = 2;
+//   v3 : + cree sur chaque perso (false = brouillon en cours de création)
+const VERSION_DONNEES = 3;
 
 // LISTES DE RÉFÉRENCE, version vide. Chaque liste contiendra des entrées
 // { id, en, fr } (= une ligne de Data Table : un Row Name fixe + un texte
@@ -227,7 +236,14 @@ function migrer(donnees) {
     donnees.listes = structuredClone(LISTES_VIDES);
     donnees.version = 2;
   }
-  // Prochaine marche (étape 5) : if (donnees.version === 2) { caracs → { base, modif } ; version = 3 }
+  if (donnees.version === 2) {
+    // 2 → 3 : chaque perso reçoit cree = true. Les persos qui existaient
+    // déjà sont considérés comme terminés (pas de brouillon rétroactif).
+    // forEach = ForEach Loop : on modifie chaque élément sur place.
+    donnees.personnages.forEach((p) => { p.cree = true; });
+    donnees.version = 3;
+  }
+  // Prochaine marche (étape 5) : if (donnees.version === 3) { caracs → { base, modif } ; version = 4 }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -268,6 +284,7 @@ function persoValide(p) {
     && typeof p.id === "string"
     && typeof p.nom === "string"
     && typeof p.niveau === "number"
+    && typeof p.cree === "boolean"
     && estObjet(p.caracs)
     && CARACS.every(([cle]) => typeof p.caracs[cle] === "number")
     && estObjet(p.ressources)
@@ -352,11 +369,12 @@ function trouverPerso(id) {
 function nouveauPerso() {
   return {
     id: "perso-" + Date.now(),
-    nom: TEXTES.nomNouveauPerso,
+    nom: "",            // vide exprès : la validation exige un vrai nom
     ascendance: "",
     communaute: "",
     classe: "",
     niveau: 1,
+    cree: false,        // brouillon : la fiche s'ouvre en écran de création
     caracs: { agility: 0, strength: 0, finesse: 0, instinct: 0, presence: 0, knowledge: 0 },
     ressources: {
       pv:     { actuel: 6, max: 6 },   // ⚠️ à vérifier selon la classe
@@ -453,6 +471,17 @@ function nomChoix(cleListe, valeur) {
   return entree ? entree.en : valeur;
 }
 
+// Ce qui manque pour valider un brouillon. Renvoie la liste des labels
+// manquants (tableau vide = tout est bon).
+function champsManquants(perso) {
+  const manquants = [];
+  if (!perso.nom.trim()) manquants.push(TEXTES.nom);
+  CHAMPS_LISTE.forEach(([champ, , label]) => {   // la virgule seule = "on saute la 2e valeur"
+    if (estVide(perso[champ])) manquants.push(label);
+  });
+  return manquants;
+}
+
 // --- 1d. LES BORNES -----------------------------------------
 // Regroupées ici pour les retrouver facilement.
 // ⚠️ Valeurs PROVISOIRES, à vérifier dans les règles officielles.
@@ -498,7 +527,7 @@ function echapper(texte) {
 function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
-      <strong>${echapper(nomAffiche(p))}</strong>
+      <strong>${echapper(nomAffiche(p))}${p.cree ? "" : ` <span class="badge">${TEXTES.brouillon}</span>`}</strong>
       <span>${echapper(nomChoix("classes", p.classe))} · ${echapper(nomChoix("ascendances", p.ascendance))} · ${TEXTES.niveauCourt(p.niveau)}</span>
       <span>${RESSOURCES.map(([cle, label]) => `${label} ${p.ressources[cle].actuel}/${p.ressources[cle].max}`).join(" · ")}</span>
     </button>
@@ -655,10 +684,13 @@ function ressourcesEdition(perso) {
 
 // Écran FICHE : chaque bloc en lecture ou en édition selon modeEdition.
 function afficherPersonnage(perso) {
+  // Brouillon → écran de création (tout est éditable, sans passer par ✎).
+  if (!perso.cree) return afficherCreation(perso);
+
   return `
     <div class="barre">
       <button class="retour" data-action="retour">${TEXTES.retour}</button>
-      <button class="retour" data-action="editer">${modeEdition ? TEXTES.termine : TEXTES.modifier}</button>
+      <button class="retour" data-action="editer">${modeEdition ? TEXTES.termine : TEXTES.correctionMj}</button>
     </div>
     <article class="fiche">
       ${modeEdition ? identiteEdition(perso) : identiteLecture(perso)}
@@ -671,6 +703,27 @@ function afficherPersonnage(perso) {
     </article>
     ${modeEdition ? `<button class="ajouter" data-action="dupliquer">${TEXTES.dupliquer}</button>` : ""}
     ${modeEdition ? `<button class="supprimer" data-action="supprimer">${TEXTES.supprimer}</button>` : ""}
+  `;
+}
+
+// Écran CRÉATION : les mêmes blocs d'édition que la correction MJ
+// (on réutilise identiteEdition, caracsEdition, ressourcesEdition),
+// + un bouton pour valider. Un seul code pour les deux usages.
+function afficherCreation(perso) {
+  return `
+    <button class="retour" data-action="retour">${TEXTES.retour}</button>
+    <h2>${TEXTES.titreCreation}</h2>
+    <article class="fiche">
+      ${identiteEdition(perso)}
+
+      <h3>${TEXTES.caracteristiques}</h3>
+      ${caracsEdition(perso)}
+
+      <h3>${TEXTES.ressources}</h3>
+      ${ressourcesEdition(perso)}
+    </article>
+    <button class="ajouter" data-action="valider">${TEXTES.creer}</button>
+    <button class="supprimer" data-action="supprimer">${TEXTES.supprimer}</button>
   `;
 }
 
@@ -828,9 +881,24 @@ document.getElementById("app").addEventListener("click", (event) => {
       document.getElementById("fichier-import").click();
       break;
     case "editer":
+      // Entrer en correction MJ demande confirmation ; en sortir, non.
+      if (!modeEdition && !confirm(TEXTES.confirmerCorrection)) break;
       champsAutre.clear();
       modeEdition = !modeEdition; // ! = NOT : bascule true ↔ false (= Flip Flop)
       break;
+    case "valider": {
+      const perso = trouverPerso(persoOuvertId);
+      const manquants = champsManquants(perso);
+      if (manquants.length > 0) {
+        alert(TEXTES.manque(manquants));
+        break;   // on reste sur l'écran de création
+      }
+      perso.cree = true;
+      sauvegarder();
+      champsAutre.clear();
+      modeEdition = false;   // → la fiche s'affiche en mode jeu
+      break;
+    }
     case "ressource":
       modifierRessource(
         trouverPerso(persoOuvertId),
@@ -844,8 +912,8 @@ document.getElementById("app").addEventListener("click", (event) => {
       break;
        
     case "ajouter":
-      persoOuvertId = ajouterPerso().id; // on ouvre directement la fiche du nouveau...
-      modeEdition = true;                // ...en mode édition, pour lui donner un nom
+      persoOuvertId = ajouterPerso().id; // cree: false → écran de création
+      modeEdition = false;
       break;
     case "dupliquer":
       persoOuvertId = dupliquerPerso(trouverPerso(persoOuvertId)).id;
