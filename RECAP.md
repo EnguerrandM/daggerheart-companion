@@ -127,6 +127,7 @@ Tout le reste est hors périmètre pour la V0.1.
   - `nouveauPerso()` : `nom: ""`, `cree: false`. `afficherPersonnage()` renvoie `afficherCreation()` pour un brouillon (réutilise `identiteEdition`/`caracsEdition`/`ressourcesEdition`). Action `valider` + `champsManquants()` (alerte « Missing: … »). « Other… » laissé vide compte comme manquant.
   - En mode jeu : identité + caracs en lecture seule ; seuls les +/− de ressources et Full heal restent. Sortir de GM fix ne demande pas de confirmation. Testé en simulation (migrations v1/v2 → v3, création, refus, brouillon, confirmation).
   - « Dupliquer » ouvre la copie en édition sans confirmation (assumé : on vient de la créer).
+- [x] Correctif (`?v=24`, retour d'Enguy) : en GM fix, « ← List » gardait les modifs (sauvegarde à la frappe) → remplacé par « ✕ Cancel ». Snapshot `copieAvantCorrection` (`structuredClone`) pris en entrant en GM fix (et après Dupliquer) ; Cancel le remet à la même place (`findIndex`). « ✓ Done » garde les modifs. Limite : fermer l'app en pleine correction garde les modifs déjà tapées.
 
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)

@@ -90,6 +90,7 @@ const TEXTES = {
   brouillon: "Draft",
   manque: (champs) => `Missing: ${champs.join(", ")}.`,
   correctionMj: "✎ GM fix",
+  annuler: "✕ Cancel",
   confirmerCorrection: "Edit a finished character? (GM fix: identity, traits and max values)",
 };
 
@@ -353,6 +354,11 @@ let ecranListes = false;
 // disparaîtrait aussitôt. Un Set = une collection SANS doublons (= un Set
 // en Blueprint) : .add(), .delete(), .has(). État d'interface, non sauvegardé.
 let champsAutre = new Set();
+
+// Copie du perso prise en ENTRANT en correction MJ (= un "snapshot").
+// Les modifs sont sauvegardées à chaque frappe ; "✕ Cancel" remet cette
+// copie à la place du perso modifié. null = pas de correction en cours.
+let copieAvantCorrection = null;
 
 // Retrouver un perso par son id : .find parcourt le tableau et renvoie
 // le premier élément qui vérifie la condition (= un "Find" sur un Array
@@ -689,7 +695,9 @@ function afficherPersonnage(perso) {
 
   return `
     <div class="barre">
-      <button class="retour" data-action="retour">${TEXTES.retour}</button>
+      ${modeEdition
+        ? `<button class="retour" data-action="annuler">${TEXTES.annuler}</button>`
+        : `<button class="retour" data-action="retour">${TEXTES.retour}</button>`}
       <button class="retour" data-action="editer">${modeEdition ? TEXTES.termine : TEXTES.correctionMj}</button>
     </div>
     <article class="fiche">
@@ -885,7 +893,20 @@ document.getElementById("app").addEventListener("click", (event) => {
       if (!modeEdition && !confirm(TEXTES.confirmerCorrection)) break;
       champsAutre.clear();
       modeEdition = !modeEdition; // ! = NOT : bascule true ↔ false (= Flip Flop)
+      // Entrée → on prend la copie ; sortie par "✓ Done" → on la jette (modifs gardées).
+      copieAvantCorrection = modeEdition ? structuredClone(trouverPerso(persoOuvertId)) : null;
       break;
+    case "annuler": {
+      // On remet la copie À LA MÊME PLACE dans le tableau (findIndex = l'index
+      // du perso qui a cet id), pour ne pas changer l'ordre de la liste.
+      const i = personnages.findIndex((p) => p.id === copieAvantCorrection.id);
+      personnages[i] = copieAvantCorrection;
+      sauvegarder();
+      copieAvantCorrection = null;
+      champsAutre.clear();
+      modeEdition = false;
+      break;
+    }
     case "valider": {
       const perso = trouverPerso(persoOuvertId);
       const manquants = champsManquants(perso);
@@ -918,6 +939,10 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "dupliquer":
       persoOuvertId = dupliquerPerso(trouverPerso(persoOuvertId)).id;
       modeEdition = true;
+      // On entre en édition sur la copie : il faut AUSSI un snapshot, sinon
+      // "✕ Cancel" n'aurait rien à restaurer (copieAvantCorrection = null → plantage).
+      // Cancel garde la copie telle qu'elle vient d'être créée.
+      copieAvantCorrection = structuredClone(trouverPerso(persoOuvertId));
       break;
     case "supprimer": {
       const perso = trouverPerso(persoOuvertId);
