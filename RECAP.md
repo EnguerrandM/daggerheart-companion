@@ -136,7 +136,10 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] Correctif (`?v=24`, retour d'Enguy) : en GM fix, « ← List » gardait les modifs (sauvegarde à la frappe) → remplacé par « ✕ Cancel ». Snapshot `copieAvantCorrection` (`structuredClone`) pris en entrant en GM fix (et après Dupliquer) ; Cancel le remet à la même place (`findIndex`). « ✓ Done » garde les modifs. Limite : fermer l'app en pleine correction garde les modifs déjà tapées.
 - [x] **Retour au français** (`?v=25`, décision d'Enguy) : le contenu (listes, futures cartes) est saisi par Enguy en français avec ses propres mots, donc l'interface repasse en FR (`TEXTES`, `lang="fr"`, manifeste). Listes : nom **FR obligatoire**, nom EN facultatif (servira à relier à l'officiel anglais si autorisation). Id fabriqué depuis le nom FR. `nomEntree(e)` = `e.fr || e.en` → les entrées créées en anglais restent valides, pas de migration. Noms des caracs traduits maison (Agilité, Force, Finesse, Instinct, Présence, Savoir) : à comparer avec une éventuelle VF officielle.
 - [x] Étape 4b (`?v=26`) : preset de caracs à la création en **toucher-poser** (choix d'Enguy, plutôt que l'échange ou le vrai drag & drop, trop coûteux en tactile ; un vrai glisser pourra s'ajouter par-dessus plus tard). `PRESET_CARACS = [2, 1, 1, 0, 0, -1]`. Brouillon : caracs à `null` = pas placée (`persoValide` l'accepte seulement si `cree: false`). `reserve(perso)` recalcule la réserve (preset moins valeurs posées, `indexOf` + `splice`) → une seule source de vérité. État d'interface `jetonSelectionne`. Toucher une carac remplie main vide = reprendre sa valeur ; poser sur une carac remplie renvoie l'ancienne valeur dans la réserve. `champsManquants` exige une réserve vide. `preparerBrouillon()` remet à vide un vieux brouillon incohérent (six 0). Testé en simulation.
-
+- ✅ Étape 4b validée sur téléphone (« trop stylé »).
+- [x] Étape 5 (`?v=27`) : modificateurs temporaires. Choix d'Enguy : affichage `+2 (+1)` = base puis TOTAL entre parenthèses (couleur or clair = buff, terracotta = debuff) ; toucher une carac en mode jeu ouvre/ferme son réglage −/+ (état `caracOuverte`). Bouton « Retirer tous les modificateurs » visible s'il y en a.
+  - Sauvegarde **v4** : chaque carac = `{ base, modif }`, jamais fusionnés. `versCaracs()` convertit (persos par défaut, nouveaux persos, migration 3 → 4). `persoValide()` vérifie la nouvelle forme (base `null` permise pour un brouillon). Correction MJ = règle la BASE ; la création place la BASE. `BORNES.modif` −5 → +5 (provisoire). `caracsLecture()` supprimée (remplacée par `caracsJeu()`). Testé en simulation : migrations v0/v3 → v4 (y compris brouillon), buff, debuff, retrait, correction MJ, création.
+  - Note : une `function` est utilisable avant sa ligne (hoisting), pas un `const` → c'est pour ça que `personnagesParDefaut` peut appeler `versCaracs()`.
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
 - [x] 2. Nombre de persos dans le titre : « Personnages (3) »
@@ -151,4 +154,4 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-V0.2 étape 5 (modificateurs `{ base, modif }`, migration v3 → v4), écran « About », critère de réussite V0.2.
+Écran « About » (mention DPCGL 4.1 + non-affiliation), puis vérification du critère de réussite V0.2.

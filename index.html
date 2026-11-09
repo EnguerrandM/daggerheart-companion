@@ -183,6 +183,10 @@
     .case-carac .valeur { color: var(--or); font-size: 1.2rem; }
     .case-carac.vide { border-style: dashed; color: var(--texte-doux); }
     .cases.en-attente .case-carac { border-color: var(--or); }   /* invite à poser */
+    .case-carac.ouverte { border-color: var(--or); }
+    .buff   { color: var(--or-clair); }
+    .debuff { color: var(--danger); }
+    .plein  { width: 100%; margin-top: 0.75rem; }
     .badge {
       font-size: 0.75rem;
       font-weight: normal;
@@ -210,7 +214,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=26" defer></script>
+  <script src="app.js?v=27" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

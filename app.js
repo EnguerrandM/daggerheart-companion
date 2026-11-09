@@ -97,6 +97,10 @@ const TEXTES = {
   correctionMj: "✎ Correction MJ",
   annuler: "✕ Annuler",
   confirmerCorrection: "Modifier un personnage terminé ? (correction MJ : identité, caracs et max)",
+
+  // Modificateurs temporaires (buff / debuff)
+  modif: "Modif.",
+  retirerModifs: "Retirer tous les modificateurs",
 };
 
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
@@ -117,7 +121,7 @@ const personnagesParDefaut = [
     classe: "",
     niveau: 1,
     cree: true,
-    caracs: { agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 },
+    caracs: versCaracs({ agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 }),
     ressources: {
       pv:     { actuel: 6, max: 6 },
       stress: { actuel: 0, max: 6 },
@@ -132,7 +136,7 @@ const personnagesParDefaut = [
     classe: "",
     niveau: 1,
     cree: true,
-    caracs: { agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 },
+    caracs: versCaracs({ agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 }),
     ressources: {
       pv:     { actuel: 7, max: 7 },
       stress: { actuel: 0, max: 6 },
@@ -197,7 +201,24 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 //   v1 : { version, personnages }
 //   v2 : + listes (classes, ascendances, communautés saisies par le MJ)
 //   v3 : + cree sur chaque perso (false = brouillon en cours de création)
-const VERSION_DONNEES = 3;
+//   v4 : chaque carac devient { base, modif } (modificateur temporaire)
+const VERSION_DONNEES = 4;
+
+// Convertit des caracs "simples" { agility: 2, ... } en { agility: { base: 2, modif: 0 }, ... }.
+// Sert aux persos par défaut, aux nouveaux persos ET à la migration 3 → 4.
+// BASE et MODIF restent SÉPARÉS : on ne les fusionne jamais, sinon on ne
+// pourrait plus retirer un debuff sans perdre la vraie valeur.
+// Object.keys = la liste des clés d'un objet (agility, strength...).
+// (Une "function" classique est utilisable même AVANT sa ligne dans le fichier,
+// contrairement à un const : c'est pour ça que les persos par défaut, plus haut,
+// peuvent l'appeler.)
+function versCaracs(simples) {
+  const resultat = {};
+  Object.keys(simples).forEach((cle) => {
+    resultat[cle] = { base: simples[cle], modif: 0 };
+  });
+  return resultat;
+}
 
 // LISTES DE RÉFÉRENCE, version vide. Chaque liste contiendra des entrées
 // { id, en, fr } (= une ligne de Data Table : un Row Name fixe + un texte
@@ -252,7 +273,12 @@ function migrer(donnees) {
     donnees.personnages.forEach((p) => { p.cree = true; });
     donnees.version = 3;
   }
-  // Prochaine marche (étape 5) : if (donnees.version === 3) { caracs → { base, modif } ; version = 4 }
+  if (donnees.version === 3) {
+    // 3 → 4 : caracs { agility: 2 } → { agility: { base: 2, modif: 0 } }.
+    // La valeur existante devient la BASE, sans modificateur.
+    donnees.personnages.forEach((p) => { p.caracs = versCaracs(p.caracs); });
+    donnees.version = 4;
+  }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -296,9 +322,14 @@ function persoValide(p) {
     && typeof p.niveau === "number"
     && typeof p.cree === "boolean"
     && estObjet(p.caracs)
-    // Une carac vaut un nombre ; null est permis seulement pour un
+    // Une carac = { base, modif }. base null est permis seulement pour un
     // brouillon (= valeur pas encore placée à la création).
-    && CARACS.every(([cle]) => typeof p.caracs[cle] === "number" || (!p.cree && p.caracs[cle] === null))
+    && CARACS.every(([cle]) => {
+      const c = p.caracs[cle];
+      return estObjet(c)
+        && typeof c.modif === "number"
+        && (typeof c.base === "number" || (!p.cree && c.base === null));
+    })
     && estObjet(p.ressources)
     && RESSOURCES.every(([cle]) => resOk(p.ressources[cle]));
 }
@@ -375,6 +406,9 @@ let copieAvantCorrection = null;
 // reprise d'une carac), ou null si rien n'est sélectionné. État d'interface.
 let jetonSelectionne = null;
 
+// En mode jeu : quelle carac a son réglage de modificateur ouvert ? (null = aucune)
+let caracOuverte = null;
+
 // Retrouver un perso par son id : .find parcourt le tableau et renvoie
 // le premier élément qui vérifie la condition (= un "Find" sur un Array
 // avec une condition, ou un ForEach + Branch + Break).
@@ -397,7 +431,7 @@ function nouveauPerso() {
     niveau: 1,
     cree: false,        // brouillon : la fiche s'ouvre en écran de création
     // null = pas encore placée (le MJ répartit PRESET_CARACS à la création)
-    caracs: { agility: null, strength: null, finesse: null, instinct: null, presence: null, knowledge: null },
+    caracs: versCaracs({ agility: null, strength: null, finesse: null, instinct: null, presence: null, knowledge: null }),
     ressources: {
       pv:     { actuel: 6, max: 6 },   // ⚠️ à vérifier selon la classe
       stress: { actuel: 0, max: 6 },
@@ -507,7 +541,7 @@ function nomChoix(cleListe, valeur) {
 function reserve(perso) {
   const restant = [...PRESET_CARACS];
   CARACS.forEach(([cle]) => {
-    const v = perso.caracs[cle];
+    const v = perso.caracs[cle].base;
     if (v === null) return;
     const i = restant.indexOf(v);   // indexOf = Find : -1 si absent
     if (i !== -1) restant.splice(i, 1);
@@ -520,7 +554,7 @@ function reserve(perso) {
 function repartitionCoherente(perso) {
   const restant = [...PRESET_CARACS];
   return CARACS.every(([cle]) => {
-    const v = perso.caracs[cle];
+    const v = perso.caracs[cle].base;
     if (v === null) return true;
     const i = restant.indexOf(v);
     if (i === -1) return false;
@@ -531,7 +565,7 @@ function repartitionCoherente(perso) {
 
 function preparerBrouillon(perso) {
   if (perso && !perso.cree && !repartitionCoherente(perso)) {
-    CARACS.forEach(([cle]) => { perso.caracs[cle] = null; });
+    CARACS.forEach(([cle]) => { perso.caracs[cle].base = null; });
     sauvegarder();
   }
 }
@@ -554,6 +588,7 @@ function champsManquants(perso) {
 const BORNES = {
   niveau: { min: 1, max: 10 },
   carac:  { min: -5, max: 9 },
+  modif:  { min: -5, max: 5 },
   maxRessource: { min: 1, max: 20 },
 };
 
@@ -720,15 +755,40 @@ function ligneReglage(action, cle, label, valeurAffichee) {
   `;
 }
 
-function caracsLecture(perso) {
-  // [cle, label] dans les paramètres = on "déballe" chaque paire (= Break Struct)
-  const lignes = CARACS.map(([cle, label]) => `<li>${label}: ${signe(perso.caracs[cle])}</li>`);
-  return `<ul>${lignes.join("")}</ul>`;
+// "+2" sans modificateur ; "+2 (+1)" = base, puis TOTAL entre parenthèses
+// (choix d'Enguy : le total est la valeur à utiliser pour le jet).
+function texteCarac(c) {
+  if (c.modif === 0) return signe(c.base);
+  return `${signe(c.base)} <span class="${c.modif > 0 ? "buff" : "debuff"}">(${signe(c.base + c.modif)})</span>`;
 }
+
+// Mode jeu : chaque carac est un bouton. Le toucher ouvre (ou referme) son
+// réglage de modificateur, juste en dessous.
+function caracsJeu(perso) {
+  const lignes = CARACS.map(([cle, label]) => {
+    const c = perso.caracs[cle];
+    const ouverte = caracOuverte === cle;
+    return `
+      <button class="case-carac ${ouverte ? "ouverte" : ""}" data-action="ouvrir-carac" data-cle="${cle}">
+        <span>${label}</span>
+        <span class="valeur">${texteCarac(c)}</span>
+      </button>
+      ${ouverte ? ligneReglage("modif", cle, TEXTES.modif, signe(c.modif)) : ""}
+    `;
+  }).join("");
+
+  // .some : au moins une carac a un modificateur ?
+  const aDesModifs = CARACS.some(([cle]) => perso.caracs[cle].modif !== 0);
+  return `
+    <div class="cases">${lignes}</div>
+    ${aDesModifs ? `<button class="retour plein" data-action="retirer-modifs">${TEXTES.retirerModifs}</button>` : ""}
+  `;
+}
+
 
 function caracsEdition(perso) {
   return CARACS.map(([cle, label]) =>
-    ligneReglage("carac", cle, label, signe(perso.caracs[cle]))
+    ligneReglage("carac", cle, label, signe(perso.caracs[cle].base))
   ).join("");
 }
 
@@ -764,7 +824,7 @@ function afficherPersonnage(perso) {
       ${modeEdition ? identiteEdition(perso) : identiteLecture(perso)}
 
       <h3>${TEXTES.caracteristiques}</h3>
-      ${modeEdition ? caracsEdition(perso) : caracsLecture(perso)}
+      ${modeEdition ? caracsEdition(perso) : caracsJeu(perso)}
 
       <h3>${TEXTES.ressources}</h3>
       ${modeEdition ? ressourcesEdition(perso) : ressourcesLecture(perso)}
@@ -788,7 +848,7 @@ function caracsCreation(perso) {
   ).join("");
 
   const cases = CARACS.map(([cle, label]) => {
-    const v = perso.caracs[cle];
+    const v = perso.caracs[cle].base;
     return `
       <button class="case-carac ${v === null ? "vide" : ""}" data-action="poser" data-cle="${cle}">
         <span>${label}</span>
@@ -851,7 +911,20 @@ function soignerComplet(perso, cle, delta) {
 }
 
 function modifierCarac(perso, cle, delta) {
-  perso.caracs[cle] = borner(perso.caracs[cle] + delta, BORNES.carac.min, BORNES.carac.max);
+  // Correction MJ : on règle la BASE (le modificateur temporaire ne bouge pas).
+  const c = perso.caracs[cle];
+  c.base = borner(c.base + delta, BORNES.carac.min, BORNES.carac.max);
+  sauvegarder();
+}
+
+function modifierModif(perso, cle, delta) {
+  const c = perso.caracs[cle];
+  c.modif = borner(c.modif + delta, BORNES.modif.min, BORNES.modif.max);
+  sauvegarder();
+}
+
+function retirerModifs(perso) {
+  CARACS.forEach(([cle]) => { perso.caracs[cle].modif = 0; });
   sauvegarder();
 }
 
@@ -938,7 +1011,19 @@ document.getElementById("app").addEventListener("click", (event) => {
       persoOuvertId = bouton.dataset.id;
       champsAutre.clear();
       jetonSelectionne = null;
+      caracOuverte = null;
       preparerBrouillon(trouverPerso(persoOuvertId));
+      break;
+    case "ouvrir-carac":
+      // Toucher la carac ouverte la referme ; toucher une autre l'ouvre à sa place.
+      caracOuverte = caracOuverte === bouton.dataset.cle ? null : bouton.dataset.cle;
+      break;
+    case "modif":
+      modifierModif(trouverPerso(persoOuvertId), bouton.dataset.cle, Number(bouton.dataset.delta));
+      break;
+    case "retirer-modifs":
+      retirerModifs(trouverPerso(persoOuvertId));
+      caracOuverte = null;
       break;
     case "jeton": {
       const v = Number(bouton.dataset.valeur);
@@ -949,21 +1034,22 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "poser": {
       const perso = trouverPerso(persoOuvertId);
       const cle = bouton.dataset.cle;
-      const actuel = perso.caracs[cle];
+      const actuel = perso.caracs[cle].base;
       if (jetonSelectionne !== null) {
         // On pose le jeton en main. S'il y avait déjà une valeur, elle
         // retourne toute seule dans la réserve (recalculée par reserve()).
-        perso.caracs[cle] = jetonSelectionne;
+        perso.caracs[cle].base = jetonSelectionne;
         jetonSelectionne = null;
       } else if (actuel !== null) {
         // Main vide + case remplie → on REPREND sa valeur en main.
-        perso.caracs[cle] = null;
+        perso.caracs[cle].base = null;
         jetonSelectionne = actuel;
       }
       sauvegarder();
       break;
     }
     case "retour":
+      caracOuverte = null;
       persoOuvertId = null;
       modeEdition = false;
       ecranListes = false;
@@ -1003,6 +1089,7 @@ document.getElementById("app").addEventListener("click", (event) => {
       document.getElementById("fichier-import").click();
       break;
     case "editer":
+      caracOuverte = null;
       // Entrer en correction MJ demande confirmation ; en sortir, non.
       if (!modeEdition && !confirm(TEXTES.confirmerCorrection)) break;
       champsAutre.clear();
