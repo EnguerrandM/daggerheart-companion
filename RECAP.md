@@ -104,6 +104,8 @@ Tout le reste est hors périmètre pour la V0.1.
 
 **Critère de réussite V0.2** : installer l'app sur l'écran d'accueil ; créer un perso via l'écran de création avec listes ; identité verrouillée ; appliquer/retirer un debuff ; un export d'avant la V0.2 se réimporte correctement (migration).
 
+**✅ V0.2 TERMINÉE le 2026-11-09** : critère validé sur téléphone (app installée et hors-ligne, création via l'écran de création avec listes, identité verrouillée, buff/debuff appliqué puis retiré, vieil export d'avant la V0.2 réimporté via les migrations v1 → v4).
+
 ## Licence (décisions du 2026-11-08/09)
 - DPCGL 2.0 lue : les applis/sites ne sont PAS dans les « Permitted Formats » ; l'usage privé entre amis n'est pas une « diffusion ». Traduire ne change rien (traduction = Adaptive Content).
 - Enguy envoie un mail à info@darringtonpress.com (brouillon fait le 2026-11-08) pour demander si une appli gratuite est acceptée. En attente de réponse.
@@ -157,4 +159,9 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-Vérifier le critère de réussite V0.2 sur téléphone, puis clôturer la V0.2.
+**V0.3 — capacités** (à cadrer avant de coder) :
+- Capacités d'ascendance (2) et de communauté (1) rattachées aux entrées des listes, saisies par Enguy.
+- Cartes de domaine : domaines (2 par classe), cartes saisies par Enguy (nom, domaine, niveau, coût, texte avec ses mots), 2 cartes choisies à la création.
+- Vue « deck » sur la fiche : swipe (CSS `scroll-snap`) + boutons ◀ ▶.
+- Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue (mail à envoyer par Enguy).
+- Petits restes possibles : icône à refaire par Enguy ; renommer le dépôt plus tard (optionnel).
