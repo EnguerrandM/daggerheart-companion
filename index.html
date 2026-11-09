@@ -191,47 +191,60 @@
       scroll-snap-align: start;
     }
     .deck::-webkit-scrollbar { display: none; }   /* idem (Chrome) */
-    /* Carte de capacité : dégradé en diagonale de --d1 (haut gauche) à
-       --d2 (bas droite).
-       - "in oklab" : le mélange se calcule dans un espace de couleur
-         "perceptuel" → le milieu est un vrai mélange des deux, pas un gris
-         boueux (le défaut, en sRGB) ni une 3e teinte.
-       - Fond NEUTRE (gris très sombre) dessous : avant, c'était le sarcelle
-         de l'app qui ressortait au centre comme une couleur en plus.
-       Par défaut (classe sans domaines) : l'or de l'app. */
+    /* Carte de capacité : MÉTAL ARGENTÉ au centre, couleurs des domaines
+       qui débordent depuis les coins (--d1 haut gauche, --d2 bas droite),
+       avec un léger reflet irisé. 4 calques empilés (le 1er listé est DESSUS) :
+         1. irisé  : une bande diagonale rose → cyan → jaune très transparente
+         2. coin 1 : radial-gradient = tache de couleur qui part du coin
+         3. coin 2 : idem, coin opposé
+         4. métal  : bandes de gris clairs/sombres en diagonale (≈ métal brossé)
+       Chaque calque est une variable à part : la carte de classe doit pouvoir
+       leur donner à chacun "padding-box" (voir plus bas).
+       radial-gradient(80% 40% at 0% 0%, ...) = ellipse de 80 % de la largeur
+       sur 40 % de la hauteur, centrée sur le coin haut gauche.
+       Par défaut (classe sans domaines) : coins argentés. */
     .carte-capacite {
       --d1: var(--accent);
       --d2: var(--accent);
-      /* 2 calques séparés (dégradé de couleur + fond neutre) : on doit
-         pouvoir donner à CHACUN sa zone (padding-box) pour la carte de classe. */
-      /* Transition COURTE : chaque couleur tient sa moitié (60 % dans le
-         coin → 40 % près du centre), puis bascule vite entre 42 % et 58 %
-         de la diagonale → on traverse à peine le mélange (gris si les
-         couleurs sont opposées). */
-      --calque-couleur: linear-gradient(in oklab 135deg,
-          color-mix(in srgb, var(--d1) 60%, transparent) 0%,
-          color-mix(in srgb, var(--d1) 40%, transparent) 42%,
-          color-mix(in srgb, var(--d2) 40%, transparent) 58%,
-          color-mix(in srgb, var(--d2) 60%, transparent) 100%);
-      --calque-fond: linear-gradient(160deg, #1c1c1f, #0e0e10);
+      --calque-irise: linear-gradient(115deg,
+          transparent 25%,
+          rgba(255, 140, 210, 0.10) 38%,
+          rgba(130, 225, 255, 0.12) 48%,
+          rgba(255, 240, 160, 0.10) 58%,
+          transparent 72%);
+      --calque-coin1: radial-gradient(85% 45% at 0% 0%,
+          color-mix(in srgb, var(--d1) 85%, transparent) 0%,
+          color-mix(in srgb, var(--d1) 40%, transparent) 45%,
+          transparent 100%);
+      --calque-coin2: radial-gradient(85% 45% at 100% 100%,
+          color-mix(in srgb, var(--d2) 85%, transparent) 0%,
+          color-mix(in srgb, var(--d2) 40%, transparent) 45%,
+          transparent 100%);
+      --calque-fond: linear-gradient(160deg,
+          #5b6068 0%, #3b3f45 20%, #6a7078 38%, #42464d 55%,
+          #5e646c 75%, #34373c 100%);
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
       padding: 1rem;
-      border: 1px solid color-mix(in srgb, var(--d1) 60%, var(--d2));
+      border: 1px solid #9aa1aa;
       border-radius: 14px;
-      background: var(--calque-couleur), var(--calque-fond);
+      background: var(--calque-irise), var(--calque-coin1), var(--calque-coin2), var(--calque-fond);
+      /* ombre portée sous le texte : lisible même sur le métal clair */
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
     }
     /* Carte de CLASSE : bordure dorée de 2px avec un reflet (spéculaire).
        Astuce : une bordure en dégradé ne marche pas avec des coins arrondis,
-       alors la bordure est TRANSPARENTE et on peint un 3e fond doré
+       alors la bordure est TRANSPARENTE et on peint un fond doré en plus,
        "border-box" (qui va jusque sous la bordure), recouvert par les fonds
        normaux limités au "padding-box" (l'intérieur). Il ne reste visible
        que l'anneau doré de 2px. */
     .carte-capacite[data-type="classe"] {
       border: 2px solid transparent;
       background:
-        var(--calque-couleur) padding-box,
+        var(--calque-irise) padding-box,
+        var(--calque-coin1) padding-box,
+        var(--calque-coin2) padding-box,
         var(--calque-fond) padding-box,
         linear-gradient(135deg,
           #8a6a2c 0%, #e8c878 18%, #fff4d0 24%, #d6b676 32%,
@@ -246,7 +259,7 @@
     .corps-capacite { margin: auto 0; }
     /* Appartenance en bas à droite : align-self pousse ce seul élément
        à droite de la colonne ; il reste en bas car il vient après le corps. */
-    .carte-capacite .type-capacite { color: var(--texte-doux); align-self: flex-end; text-align: right; }
+    .carte-capacite .type-capacite { color: #e6e9ed; align-self: flex-end; text-align: right; }
     .pastille-couleur {
       display: inline-block;
       width: 0.8rem;
@@ -391,7 +404,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=42" defer></script>
+  <script src="app.js?v=43" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
