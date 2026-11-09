@@ -5,7 +5,7 @@
   <!-- Indispensable sur mobile : sans ça, le téléphone affiche la page "dézoomée" comme un site de PC -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Couleur de la barre d'adresse / barre système sur Android -->
-  <meta name="theme-color" content="#0a2422">
+  <meta name="theme-color" content="#121315">
   <!-- Carte d'identité de l'appli (nom, icône, couleurs) : permet de l'installer -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icones/icone-192.png">
@@ -13,18 +13,22 @@
   <style>
     /* ===== PALETTE =====
        Variables CSS (= Material Parameter Collection) : on change une
-       couleur ICI et toute l'app suit. Usage : var(--or). */
+       couleur ICI et toute l'app suit. Usage : var(--accent). */
     :root {
-      --fond:        #0a2422;   /* sarcelle presque noir */
-      --fond-halo:   #1b4d47;   /* halos "nébuleuse" du fond */
-      --carte:       rgba(19, 58, 54, 0.78);  /* cartes légèrement translucides */
-      --carte-creux: #0c2b28;   /* fond des champs de saisie */
-      --bordure:     #2f5f58;
-      --or:          #d6b676;   /* or champagne, plus doux que l'ancien jaune */
-      --or-clair:    #f1ddb0;
-      --texte:       #ece6d6;   /* blanc chaud, pas blanc pur */
-      --texte-doux:  #a8bfb8;
-      --danger:      #d98a6e;   /* terracotta, lisible sur le vert */
+      /* Thème ARGENT (?v=41) : base neutre grise, pour que les couleurs des
+         cartes (domaines, or, argent) soient les seules vraies couleurs.
+         Ancien thème sarcelle + or : voir l'historique Git (?v=40). */
+      --fond:         #121315;   /* gris presque noir */
+      --fond-halo:    #2b2e33;   /* halos "nébuleuse" du fond */
+      --fond-halo-2:  #1f2125;
+      --carte:        rgba(34, 36, 40, 0.80);  /* cartes légèrement translucides */
+      --carte-creux:  #17181b;   /* fond des champs de saisie */
+      --bordure:      #3c4046;
+      --accent:       #c5ccd3;   /* argent (ex --or) */
+      --accent-clair: #eef1f4;
+      --texte:        #ececec;
+      --texte-doux:   #a2a8af;
+      --danger:       #d98a6e;   /* terracotta */
     }
 
     body {
@@ -38,11 +42,11 @@
          radial-gradient = dégradé circulaire (≈ un Radial Gradient en matériau). */
       background:
         radial-gradient(ellipse at 85% 5%,  var(--fond-halo) 0%, transparent 55%),
-        radial-gradient(ellipse at 10% 95%, #163f3a 0%, transparent 50%),
+        radial-gradient(ellipse at 10% 95%, var(--fond-halo-2) 0%, transparent 50%),
         var(--fond);
     }
-    h1 { color: var(--or); letter-spacing: 0.04em; }
-    h2 { color: var(--or-clair); }
+    h1 { color: var(--accent); letter-spacing: 0.04em; }
+    h2 { color: var(--accent-clair); }
     .fiche {
       background: var(--carte);
       border: 1px solid var(--bordure);
@@ -50,7 +54,7 @@
       padding: 1rem;
     }
     .fiche h2 { margin-top: 0; }
-    .fiche h3 { color: var(--or); margin-bottom: 0.3rem; }
+    .fiche h3 { color: var(--accent); margin-bottom: 0.3rem; }
     .ressource {
       display: flex;          /* éléments alignés sur une ligne */
       align-items: center;
@@ -71,14 +75,14 @@
       color: var(--texte-doux);
       font-size: 1rem;
     }
-    .carte-perso strong { font-size: 1.2rem; color: var(--or); }
+    .carte-perso strong { font-size: 1.2rem; color: var(--accent); }
     .retour {
       margin-bottom: 0.75rem;
       padding: 0.6rem 1rem;
-      border: 1px solid var(--or);
+      border: 1px solid var(--accent);
       border-radius: 8px;
       background: none;
-      color: var(--or);
+      color: var(--accent);
       font-size: 1rem;
     }
     .ajouter, .supprimer {
@@ -88,7 +92,7 @@
       font-size: 1rem;
       background: none;
     }
-    .ajouter { border: 2px dashed var(--or); color: var(--or); }
+    .ajouter { border: 2px dashed var(--accent); color: var(--accent); }
     .supprimer { margin-top: 1.5rem; border: 1px solid var(--danger); color: var(--danger); }
     .barre { display: flex; justify-content: space-between; }
     .fichiers { margin-top: 1.5rem; }
@@ -97,7 +101,7 @@
       flex-direction: column;
       gap: 0.25rem;
       margin-bottom: 0.75rem;
-      color: var(--or);
+      color: var(--accent);
       font-size: 0.9rem;
     }
     .champ input, .champ select, .champ textarea {
@@ -116,15 +120,15 @@
       font-size: 1.4rem;
       border: none;
       border-radius: 8px;
-      background: var(--or);
+      background: var(--accent);
       color: var(--fond);
     }
     .fillHeal {   width: 50%;
       padding: 0.4rem;
       border-radius: 16px;
-      border: 1px solid var(--or);
+      border: 1px solid var(--accent);
       font-size: 1rem;
-      color: var(--or);
+      color: var(--accent);
       background: var(--fond);
     }
 
@@ -191,8 +195,8 @@
          de l'app qui ressortait au centre comme une couleur en plus.
        Par défaut (classe sans domaines) : l'or de l'app. */
     .carte-capacite {
-      --d1: var(--or);
-      --d2: var(--or);
+      --d1: var(--accent);
+      --d2: var(--accent);
       /* 2 calques séparés (dégradé de couleur + fond neutre) : on doit
          pouvoir donner à CHACUN sa zone (padding-box) pour la carte de classe. */
       /* Transition COURTE : chaque couleur tient sa moitié (60 % dans le
@@ -248,7 +252,7 @@
       border: 1px solid rgba(255, 255, 255, 0.3);
     }
     .champ input[type="color"] { height: 3rem; padding: 0.2rem; }
-    .carte-capacite strong { display: block; margin-bottom: 0.4rem; color: var(--or); font-size: 1.15rem; }
+    .carte-capacite strong { display: block; margin-bottom: 0.4rem; text-align: center; color: var(--accent); font-size: 1.15rem; }
     .carte-capacite p { margin: 0; white-space: pre-line; line-height: 1.45; }   /* garde les retours à la ligne */
     .nav-deck {
       position: sticky;              /* reste collée en haut quand on fait défiler la page */
@@ -260,15 +264,15 @@
       gap: 1.25rem;
       margin: 0 -1.5rem 0.5rem;
       padding: 0.5rem 0;
-      background: rgba(10, 36, 34, 0.92);   /* --fond, presque opaque */
+      background: rgba(18, 19, 21, 0.92);   /* --fond, presque opaque */
     }
     .nav-deck button {
       width: 3rem;
       height: 2.5rem;
-      border: 1px solid var(--or);
+      border: 1px solid var(--accent);
       border-radius: 10px;
       background: none;
-      color: var(--or);
+      color: var(--accent);
       font-size: 1rem;
     }
     .nav-deck button:disabled { opacity: 0.3; }
@@ -278,10 +282,10 @@
     li.sous-entree:not(.entree) { list-style: none; padding: 0.4rem 0; border-bottom: 1px solid var(--bordure); }
     .petit-ajout {
       padding: 0.3rem 0.8rem;
-      border: 1px dashed var(--or);
+      border: 1px dashed var(--accent);
       border-radius: 8px;
       background: none;
-      color: var(--or);
+      color: var(--accent);
       font-size: 0.9rem;
     }
     .entree button {
@@ -293,7 +297,7 @@
       color: var(--danger);
       font-size: 1rem;
     }
-    .entree button.editer { border-color: var(--or); color: var(--or); }
+    .entree button.editer { border-color: var(--accent); color: var(--accent); }
     .vide { color: var(--texte-doux); font-style: italic; }
     .aide { color: var(--texte-doux); font-size: 0.85rem; font-style: italic; }
     /* ===== Création : jetons de caracs ===== */
@@ -307,13 +311,13 @@
     .jeton {
       min-width: 3rem;
       height: 2.75rem;
-      border: 2px solid var(--or);
+      border: 2px solid var(--accent);
       border-radius: 999px;
       background: none;
-      color: var(--or);
+      color: var(--accent);
       font-size: 1.1rem;
     }
-    .jeton.choisi { background: var(--or); color: var(--fond); }   /* "dans la main" */
+    .jeton.choisi { background: var(--accent); color: var(--fond); }   /* "dans la main" */
     .cases { display: flex; flex-direction: column; gap: 0.4rem; }
     .case-carac {
       display: flex;
@@ -326,15 +330,15 @@
       color: var(--texte);
       font-size: 1rem;
     }
-    .case-carac .valeur { color: var(--or); font-size: 1.2rem; }
+    .case-carac .valeur { color: var(--accent); font-size: 1.2rem; }
     .case-carac.vide { border-style: dashed; color: var(--texte-doux); }
-    .cases.en-attente .case-carac { border-color: var(--or); }   /* invite à poser */
-    .case-carac.ouverte { border-color: var(--or); }
-    .buff   { color: var(--or-clair); }
+    .cases.en-attente .case-carac { border-color: var(--accent); }   /* invite à poser */
+    .case-carac.ouverte { border-color: var(--accent); }
+    .buff   { color: var(--accent-clair); }
     .debuff { color: var(--danger); }
     .plein  { width: 100%; margin-top: 0.75rem; }
     .texte p { line-height: 1.5; color: var(--texte); }
-    .texte a { color: var(--or); }
+    .texte a { color: var(--accent); }
     /* Nom à gauche, pastille de niveau à droite */
     .ligne-nom {
       display: flex;
@@ -349,9 +353,9 @@
       justify-content: center;
       width: 2rem;
       height: 2rem;
-      border: 2px solid var(--or);
+      border: 2px solid var(--accent);
       border-radius: 50%;        /* carré + 50 % = cercle */
-      color: var(--or);
+      color: var(--accent);
       font-size: 1rem;
       font-weight: bold;
     }
@@ -382,7 +386,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=40" defer></script>
+  <script src="app.js?v=41" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
