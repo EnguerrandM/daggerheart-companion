@@ -113,6 +113,11 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] Étape 1b : `sw.js` réseau d'abord ✅ testé sur téléphone : app installée, fonctionne en mode avion
 - [x] Interface passée en anglais via l'objet `TEXTES` (`?v=18`), persos par défaut en anglais
 
+### Session 6 — 2026-11-09
+- [x] Noms du SRD retirés des persos par défaut (`?v=19`)
+- [x] Étape 3a (`?v=20`) : sauvegarde v2 = `{ version: 2, personnages, listes }`, listes vides `LISTES_VIDES = { classes, ascendances, communautes }` (entrées `{ id, en, fr }`). 1re vraie migration v1 → v2 (ajoute des listes vides). `migrer()` renvoie maintenant l'enveloppe entière ; `listesValides()` ; `enveloppe()` partagée par sauvegarde + export ; `let { personnages, listes } = charger()` (déstructuration = Break Struct). L'import remplace persos ET listes. Testé en simulation : vide, v0, v1, v2, v99, JSON cassé, listes cassées.
+- Limite connue : importer un vieil export (v1) remplace tes listes par des listes vides.
+
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
 - [x] 2. Nombre de persos dans le titre : « Personnages (3) »

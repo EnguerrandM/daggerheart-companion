@@ -64,7 +64,7 @@ const TEXTES = {
   pasUneSauvegarde: "This file doesn't look like a Daggerheart Companion save (or it comes from a newer version).",
   confirmerImport: (nb, nbActuels) =>
     `Import ${nb} character(s)?\n` +
-    `This REPLACES the ${nbActuels} current character(s).`,
+    `This REPLACES the ${nbActuels} current character(s) and your lists.`,
 };
 
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
@@ -137,19 +137,31 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 // À incrémenter à chaque fois que la FORME d'un perso change
 // (ex. futur passage des caracs à { base, modif }), en ajoutant
 // l'étape de conversion correspondante dans migrer().
-const VERSION_DONNEES = 1;
+//   v1 : { version, personnages }
+//   v2 : + listes (classes, ascendances, communautés saisies par le MJ)
+const VERSION_DONNEES = 2;
+
+// LISTES DE RÉFÉRENCE, version vide. Chaque liste contiendra des entrées
+// { id, en, fr } (= une ligne de Data Table : un Row Name fixe + un texte
+// par langue). Elles sont VIDES dans le code : c'est le MJ qui les remplit
+// (licence : pas de contenu du SRD dans le dépôt public).
+const LISTES_VIDES = { classes: [], ascendances: [], communautes: [] };
+
+// Fabrique l'enveloppe à écrire. Une seule fonction pour la sauvegarde
+// ET l'export : impossible que les deux formats divergent.
+// Comme un Save Game qui écrit son propre numéro de version.
+function enveloppe() {
+  return { version: VERSION_DONNEES, personnages: personnages, listes: listes };
+}
 
 function sauvegarder() {
-  // On ne stocke plus la liste "nue" mais une enveloppe :
-  //   { version: 1, personnages: [...] }
-  // Comme un Save Game qui écrit son propre numéro de version.
-  const enveloppe = { version: VERSION_DONNEES, personnages: personnages };
-  localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(enveloppe)); // objet → texte
+  localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(enveloppe())); // objet → texte
 }
 
 // MIGRATION : prend des données dans n'importe quel ancien format
 // et les amène au format actuel, ÉTAPE PAR ÉTAPE (0→1, puis 1→2...).
-// Renvoie la liste de persos, ou null si les données sont inexploitables.
+// Renvoie l'enveloppe au format actuel { version, personnages, listes },
+// ou null si les données sont inexploitables.
 // Servira aussi à l'import JSON : un vieux fichier exporté sera converti pareil.
 function migrer(donnees) {
   // Format 0 (avant cette version) : un tableau nu, sans enveloppe.
@@ -168,8 +180,14 @@ function migrer(donnees) {
     // 0 → 1 : seule l'enveloppe change, les persos gardent leur forme.
     donnees.version = 1;
   }
-  // Futur exemple :
-  // if (donnees.version === 1) { ...convertir les caracs... ; donnees.version = 2; }
+  if (donnees.version === 1) {
+    // 1 → 2 : on ajoute les listes, vides. Les persos ne changent pas.
+    // structuredClone : chaque sauvegarde a SES listes, pas une référence
+    // partagée vers LISTES_VIDES (sinon remplir l'une remplirait "l'original").
+    donnees.listes = structuredClone(LISTES_VIDES);
+    donnees.version = 2;
+  }
+  // Prochaine marche (étape 5) : if (donnees.version === 2) { caracs → { base, modif } ; version = 3 }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -184,7 +202,21 @@ function migrer(donnees) {
     return null;
   }
 
-  return donnees.personnages;
+  if (!listesValides(donnees.listes)) {
+    console.warn("Les listes ont une forme inattendue");
+    return null;
+  }
+
+  return donnees;
+}
+
+// Vérifie les listes : un objet avec les 3 tableaux attendus, chaque entrée
+// ayant au moins un id et un nom anglais (le nom français est facultatif).
+function listesValides(l) {
+  const entreeOk = (e) => typeof e === "object" && e !== null
+    && typeof e.id === "string" && typeof e.en === "string";
+  return typeof l === "object" && l !== null
+    && Object.keys(LISTES_VIDES).every((cle) => Array.isArray(l[cle]) && l[cle].every(entreeOk));
 }
 
 // Vérifie qu'un perso a bien tous les morceaux dont l'affichage a besoin.
@@ -218,8 +250,8 @@ function charger() {
   // 1. Cas normal : il y a une sauvegarde → on la migre si besoin
   const brut = lireSlot(CLE_SAUVEGARDE);
   if (brut !== null) {
-    const liste = migrer(brut);
-    if (liste) return liste;
+    const donnees = migrer(brut);
+    if (donnees) return donnees;
   }
 
   // 1b. FILET DE SÉCURITÉ : une sauvegarde existe mais on n'a pas pu la lire
@@ -241,10 +273,13 @@ function charger() {
   const ancienPerso = lireSlot(ANCIENNE_CLE);
   if (ancienPerso) nouvelleListe[0] = ancienPerso;
 
-  return nouvelleListe;
+  return { personnages: nouvelleListe, listes: structuredClone(LISTES_VIDES) };
 }
 
-let personnages = charger();
+// charger() renvoie un objet ; on le "déballe" en deux variables
+// (= Break Struct). Écrire { personnages, listes } à gauche du = revient à :
+//   personnages = resultat.personnages ; listes = resultat.listes
+let { personnages, listes } = charger();
 
 // Quel perso est ouvert ? null = on est sur l'écran liste.
 // C'est un "état" de l'interface : il n'est pas sauvegardé.
@@ -504,8 +539,7 @@ function modifierMax(perso, cle, delta) {
 
 function exporter() {
   // Même enveloppe que la sauvegarde. null, 2 = texte indenté, lisible à l'œil.
-  const enveloppe = { version: VERSION_DONNEES, personnages: personnages };
-  const texte = JSON.stringify(enveloppe, null, 2);
+  const texte = JSON.stringify(enveloppe(), null, 2);
 
   // Blob = un "fichier en mémoire". createObjectURL lui donne une adresse
   // temporaire, qu'on met sur un lien <a download> invisible qu'on "clique".
@@ -530,19 +564,21 @@ async function importer(fichier) {
     return;
   }
 
-  const liste = migrer(donnees); // même escalier que la sauvegarde locale
-  if (!liste) {
+  const resultat = migrer(donnees); // même escalier que la sauvegarde locale
+  if (!resultat) {
     alert(TEXTES.pasUneSauvegarde);
     return;
   }
 
-  const ok = confirm(TEXTES.confirmerImport(liste.length, personnages.length));
+  const ok = confirm(TEXTES.confirmerImport(resultat.personnages.length, personnages.length));
   if (!ok) return;
 
   // Filet : on garde la liste actuelle de côté avant de l'écraser.
   localStorage.setItem(CLE_SAUVEGARDE + "-avant-import", localStorage.getItem(CLE_SAUVEGARDE));
 
-  personnages = liste;
+  // L'import remplace TOUT : persos ET listes.
+  personnages = resultat.personnages;
+  listes = resultat.listes;
   persoOuvertId = null;
   modeEdition = false;
   sauvegarder();
