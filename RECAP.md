@@ -169,7 +169,7 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
 
 **Critère de réussite V0.3** (proposé) : saisir les capacités d'une ascendance, d'une communauté, d'une classe et d'une sous-classe ; créer un perso avec sous-classe ; voir ses cartes défiler au doigt et aux boutons ; corriger une capacité et voir la correction sur la fiche ; l'export/import conserve tout.
 
-**Repoussé** : V0.4 = domaines + cartes de domaine + choix des 2 cartes à la création (classe « Autre » bloquée) + vault plus tard. V0.5 = anglais.
+**Repoussé** : V0.4 = cartes de domaine (la liste des domaines existe déjà depuis `?v=37`) + choix des 2 cartes à la création (classe « Autre » bloquée) + vault plus tard. V0.5 = anglais.
 
 ## Avancement V0.3
 ### Session 7 — 2026-11-09
@@ -198,7 +198,13 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
   - Deck en pleine largeur : marges négatives (`margin: 0 -1.5rem`) qui annulent le padding du body + `scroll-padding` → la carte garde toute la largeur et on aperçoit le bord des voisines. Cartes `flex: 0 0 100%`, `align-items: flex-start` (chaque carte garde sa hauteur).
   - Barre ◀ « Fiche » / « Capacité 2 / 6 » ▶ **au-dessus** du deck, `position: sticky` (reste collée en haut). `remonterAuDeck()` : si on a défilé vers le bas et qu'on change de carte, on remonte en haut du deck (`getBoundingClientRect`).
   - Verrou `cibleDeck` pendant l'animation d'un bouton (sinon le compteur reculait et un 2e tap rapide allait au mauvais endroit), levé à l'arrivée ou après 700 ms (`setTimeout`/`clearTimeout`).
-  - Limite connue : le deck est aussi haut que sa plus haute carte (la fiche) → espace vide sous une capacité courte.
+- ✅ Deck v2 validé sur téléphone (2026-11-09).
+- [x] Visuels (`?v=37`, demandes d'Enguy) :
+  - Toutes les cartes ont la hauteur de la fiche (`align-items` par défaut = `stretch`) → plus d'espace vide.
+  - **Domaines avancés de la V0.4** (juste ce qu'il faut pour les couleurs) : nouvelle liste `domaines` (`{ ..., couleur: "#rrggbb" }`, choisie par le MJ avec `<input type="color">`, aucune couleur officielle dans le dépôt) ; chaque classe a `domaines: [id, id]` (2 menus sur l'écran de la classe). Sauvegarde **v7**. Pastilles de couleur devant domaines et classes dans ☰ Listes.
+  - Carte de capacité de **classe et sous-classe** = dégradé diagonal entre les 2 couleurs de domaines, fondu au centre (variables CSS `--d1`/`--d2` passées en `style`, `color-mix(... 45%, transparent)`). **Ascendance = doré, communauté = argenté.**
+  - Sécurité : une couleur finit dans un attribut `style` → validée par regex `^#[0-9a-f]{6}$` (`couleurSure()` + `listesValides` refuse un import piégé).
+  - Testé en simulation (migration v6 → v7, saisie, couleurs, import piégé refusé).
 
 ## Prochaine étape
 **V0.3 — validation du critère de réussite sur téléphone**, puis cadrage V0.4 (voir Plan V0.3). Ancien cadrage :

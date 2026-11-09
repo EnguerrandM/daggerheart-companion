@@ -163,7 +163,8 @@
     .deck {
       position: relative;            /* repère pour offsetLeft des cartes (JS) */
       display: flex;
-      align-items: flex-start;       /* chaque carte garde SA hauteur (fiche longue, capacité courte) */
+      /* pas d'align-items : par défaut "stretch" → toutes les cartes
+         prennent la hauteur de la plus haute (la fiche). */
       gap: 0.75rem;
       overflow-x: auto;              /* défilement horizontal */
       scroll-snap-type: x mandatory; /* chaque arrêt se "cale" sur une carte */
@@ -181,24 +182,42 @@
       scroll-snap-align: start;
     }
     .deck::-webkit-scrollbar { display: none; }   /* idem (Chrome) */
+    /* Carte de capacité : dégradé en diagonale entre 2 couleurs --d1 et
+       --d2, qui s'estompent vers le centre (fondu), par-dessus le fond sombre.
+       Plusieurs fonds empilés : le 1er listé est DESSUS.
+       color-mix(... 40%, transparent) = la couleur à 40 % d'opacité.
+       Par défaut (classe sans domaines) : l'or de l'app. */
     .carte-capacite {
+      --d1: var(--or);
+      --d2: var(--or);
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
-      min-height: 14rem;
       padding: 1rem;
-      border: 1px solid var(--accent-carte);
-      border-top: 4px solid var(--accent-carte);
+      border: 1px solid color-mix(in srgb, var(--d1) 60%, var(--d2));
       border-radius: 14px;
-      background: linear-gradient(160deg, var(--carte-creux), #081f1d);
-      /* couleur par défaut, remplacée selon le type ci-dessous */
-      --accent-carte: var(--or);
+      background:
+        linear-gradient(135deg,
+          color-mix(in srgb, var(--d1) 45%, transparent) 0%,
+          transparent 45%,
+          transparent 55%,
+          color-mix(in srgb, var(--d2) 45%, transparent) 100%),
+        linear-gradient(160deg, var(--carte-creux), #081f1d);
     }
-    /* Une couleur par type : une variable CSS changée selon data-type */
-    .carte-capacite[data-type="sousClasse"] { --accent-carte: #c9a7d8; }
-    .carte-capacite[data-type="ascendance"] { --accent-carte: #7cc4b4; }
-    .carte-capacite[data-type="communaute"] { --accent-carte: #e0a882; }
-    .carte-capacite .type-capacite { color: var(--accent-carte); }
+    /* Ascendance = doré, communauté = argenté (2 nuances pour un reflet). */
+    .carte-capacite[data-type="ascendance"] { --d1: #e8c878; --d2: #a8803a; }
+    .carte-capacite[data-type="communaute"] { --d1: #e4e9ec; --d2: #8d989f; }
+    .carte-capacite .type-capacite { color: var(--texte-doux); }
+    .pastille-couleur {
+      display: inline-block;
+      width: 0.8rem;
+      height: 0.8rem;
+      margin-right: 0.35rem;
+      border-radius: 50%;
+      vertical-align: middle;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .champ input[type="color"] { height: 3rem; padding: 0.2rem; }
     .carte-capacite strong { color: var(--or); font-size: 1.15rem; }
     .carte-capacite p { margin: 0; white-space: pre-line; line-height: 1.45; }   /* garde les retours à la ligne */
     .nav-deck {
@@ -333,7 +352,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=36" defer></script>
+  <script src="app.js?v=37" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

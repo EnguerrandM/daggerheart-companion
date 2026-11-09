@@ -99,6 +99,12 @@ const TEXTES = {
   confirmerRetraitCapacite: (nom) => `Retirer la capacité ${nom || "sans nom"} ?`,
   confirmerAbandon: "Abandonner les modifications non enregistrées ?",
   ongletFiche: "Fiche",
+  listeDomaines: "Domaines",
+  couleur: "Couleur",
+  domaineN: (n) => `Domaine ${n}`,
+  aucunDomaine: "— Aucun —",
+  aideDomaines: "Les capacités de la classe (et de ses sous-classes) prennent les couleurs de ses 2 domaines.",
+
   compteurCapacite: (i, n) => `Capacité ${i} / ${n}`,
   precedente: "Carte précédente",
   suivante: "Carte suivante",
@@ -212,6 +218,7 @@ const RESSOURCES = [
 // Même principe que CARACS : une seule liste pilote l'écran de gestion
 // (et, à l'étape 3c, les menus déroulants).
 const LISTES = [
+  ["domaines", TEXTES.listeDomaines],   // avant les classes : elles s'y réfèrent
   ["classes", TEXTES.listeClasses],
   ["ascendances", TEXTES.listeAscendances],
   ["communautes", TEXTES.listeCommunautes],
@@ -254,7 +261,9 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 //   v5 : + liste sousClasses (chaque entrée a un champ classe = id de sa
 //        classe) ; chaque perso reçoit sousClasse: ""
 //   v6 : chaque entrée de liste reçoit capacites: [{ nom, texte }]
-const VERSION_DONNEES = 6;
+//   v7 : + liste domaines (entrées avec couleur "#rrggbb") ; chaque classe
+//        reçoit domaines: [] (ids de ses 2 domaines)
+const VERSION_DONNEES = 7;
 
 // Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
 // VERSION_DONNEES, qui ne change que quand la forme des données change.
@@ -293,7 +302,19 @@ function versCaracs(simples) {
 // { id, en, fr } (= une ligne de Data Table : un Row Name fixe + un texte
 // par langue). Elles sont VIDES dans le code : c'est le MJ qui les remplit
 // (licence : pas de contenu du SRD dans le dépôt public).
-const LISTES_VIDES = { classes: [], ascendances: [], communautes: [], sousClasses: [] };
+const LISTES_VIDES = { classes: [], ascendances: [], communautes: [], sousClasses: [], domaines: [] };
+
+// Couleur par défaut d'un nouveau domaine (gris neutre).
+const COULEUR_DEFAUT = "#8a8a8a";
+
+// Une couleur "sûre" = exactement # + 6 chiffres hexadécimaux.
+// ^ et $ = début et fin du texte : rien d'autre ne peut s'y glisser.
+// Important : la couleur finit dans un attribut style="..." ; une valeur
+// piégée (ex. dans un JSON importé) pourrait sinon y injecter du code.
+const RE_COULEUR = /^#[0-9a-f]{6}$/i;
+function couleurSure(c) {
+  return typeof c === "string" && RE_COULEUR.test(c) ? c : COULEUR_DEFAUT;
+}
 
 // Fabrique l'enveloppe à écrire. Une seule fonction pour la sauvegarde
 // ET l'export : impossible que les deux formats divergent.
@@ -362,6 +383,12 @@ function migrer(donnees) {
     });
     donnees.version = 6;
   }
+  if (donnees.version === 6) {
+    // 6 → 7 : liste des domaines (vide) + domaines: [] sur chaque classe.
+    donnees.listes.domaines = [];
+    donnees.listes.classes.forEach((e) => { e.domaines = []; });
+    donnees.version = 7;
+  }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -396,7 +423,10 @@ function listesValides(l) {
   return typeof l === "object" && l !== null
     && Object.keys(LISTES_VIDES).every((cle) => Array.isArray(l[cle]) && l[cle].every(entreeOk))
     // Une sous-classe doit dire à quelle classe elle appartient.
-    && l.sousClasses.every((e) => typeof e.classe === "string");
+    && l.sousClasses.every((e) => typeof e.classe === "string")
+    // Un domaine a une couleur valide ; une classe, une liste d'ids de domaines.
+    && l.domaines.every((e) => typeof e.couleur === "string" && RE_COULEUR.test(e.couleur))
+    && l.classes.every((e) => Array.isArray(e.domaines) && e.domaines.every((d) => typeof d === "string"));
 }
 
 // Vérifie qu'un perso a bien tous les morceaux dont l'affichage a besoin.
@@ -508,6 +538,9 @@ let minuterieDeck = null;
 function ouvrirEntree(cle, id, classe) {
   const e = id ? trouverEntree(cle, id) : { fr: "", en: "", classe: classe, capacites: [] };
   const copie = { fr: e.fr || "", en: e.en || "", capacites: structuredClone(e.capacites || []) };
+  if (cle === "domaines") copie.couleur = couleurSure(e.couleur);
+  // Toujours 2 cases pour les 2 domaines d'une classe ("" = aucun).
+  if (cle === "classes") copie.domaines = [(e.domaines || [])[0] || "", (e.domaines || [])[1] || ""];
   entreeEditee = { cle, id, classe: id ? e.classe : classe, brouillon: copie, original: structuredClone(copie) };
   ecran = "entree";
 }
@@ -654,6 +687,13 @@ function idLibre(cle, fr) {
   return id;
 }
 
+// Les champs propres à certaines listes, avec leur valeur de départ.
+function champsEnPlus(cle) {
+  if (cle === "domaines") return { couleur: COULEUR_DEFAUT };
+  if (cle === "classes") return { domaines: [] };
+  return {};
+}
+
 // Renvoie true si l'ajout a réussi, false sinon (nom vide, doublon).
 // extra = champs en plus pour certaines listes (ex. { classe: "id" } pour
 // une sous-classe). ...extra = "étale" ses champs dans la nouvelle entrée.
@@ -679,7 +719,8 @@ function ajouterEntree(cle, fr, en, extra = {}) {
 // Table : on peut changer tout le contenu de la ligne, mais si on
 // renommait la ligne, tout ce qui pointe dessus serait cassé.
 // Résultat : renommer une classe met à jour tous les persos d'un coup.
-function modifierEntree(cle, id, fr, en, capacites) {
+// extra = champs propres à la liste (couleur d'un domaine, domaines d'une classe).
+function modifierEntree(cle, id, fr, en, capacites, extra = {}) {
   fr = fr.trim();
   en = en.trim();
   if (!fr) {
@@ -695,6 +736,8 @@ function modifierEntree(cle, id, fr, en, capacites) {
   entree.fr = fr;
   entree.en = en;
   entree.capacites = capacites;
+  // Object.assign = copie les champs de extra dans entree (≈ Set Members).
+  Object.assign(entree, extra);
   sauvegarder();
   return true;
 }
@@ -907,6 +950,22 @@ function afficherAPropos() {
 // chaque frappe), ici rien n'est enregistré avant "✓ Enregistrer" :
 // "✕ Annuler" n'a donc rien à défaire, il suffit de quitter l'écran.
 // (Cet écran accueillera les capacités à l'étape 3.)
+// Les 2 menus "Domaine 1 / Domaine 2" de l'écran d'une classe.
+// data-domaine = l'index (0 ou 1) dans brouillon.domaines.
+function choixDomaines(b) {
+  const menus = [0, 1].map((i) => `
+    <label class="champ">${TEXTES.domaineN(i + 1)}
+      <select data-domaine="${i}">
+        <option value="">${TEXTES.aucunDomaine}</option>
+        ${trier(listes.domaines).map((d) =>
+          `<option value="${d.id}" ${b.domaines[i] === d.id ? "selected" : ""}>${echapper(nomEntree(d))}</option>`
+        ).join("")}
+      </select>
+    </label>
+  `).join("");
+  return menus + `<p class="aide">${TEXTES.aideDomaines}</p>`;
+}
+
 function afficherEditionEntree() {
   const { cle, id, classe, brouillon: b } = entreeEditee;
   const titre = id
@@ -945,9 +1004,16 @@ function afficherEditionEntree() {
       <label class="champ">${TEXTES.nomEn}
         <input type="text" data-brouillon="en" value="${echapper(b.en)}">
       </label>
-      <h3>${TEXTES.capacites}</h3>
-      ${blocsCapacites}
-      <button class="petit-ajout" data-action="ajouter-capacite">${TEXTES.ajouterCapacite}</button>
+      ${cle === "domaines" ? `
+        <label class="champ">${TEXTES.couleur}
+          <input type="color" data-brouillon="couleur" value="${couleurSure(b.couleur)}">
+        </label>
+      ` : `
+        ${cle === "classes" ? choixDomaines(b) : ""}
+        <h3>${TEXTES.capacites}</h3>
+        ${blocsCapacites}
+        <button class="petit-ajout" data-action="ajouter-capacite">${TEXTES.ajouterCapacite}</button>
+      `}
     </article>
     <button class="ajouter" data-action="enregistrer-entree">${TEXTES.enregistrer}</button>
   `;
@@ -959,12 +1025,28 @@ function trier(entrees) {
   return [...entrees].sort((a, b) => nomEntree(a).localeCompare(nomEntree(b)));
 }
 
+// Petites pastilles de couleur devant un domaine (sa couleur) ou une
+// classe (les couleurs de ses domaines). Rien pour les autres listes.
+function pastillesCouleur(cle, e) {
+  const couleurs = cle === "domaines" ? [e.couleur] : cle === "classes" ? couleursClasse(e) : [];
+  return couleurs.map((c) => `<span class="pastille-couleur" style="background:${couleurSure(c)}"></span>`).join("");
+}
+
+// Les couleurs des domaines d'une classe (0, 1 ou 2), domaines retirés ignorés.
+function couleursClasse(classe) {
+  if (!classe) return [];
+  return (classe.domaines || [])
+    .map((id) => trouverEntree("domaines", id))
+    .filter((d) => d)
+    .map((d) => couleurSure(d.couleur));
+}
+
 // Une ligne d'entrée : nom (+ nom anglais), boutons ✎ et ✕.
 // classeEnPlus = classe CSS en plus ("sous-entree" pour le décalage).
 function ligneEntree(cle, e, classeEnPlus) {
   return `
     <li class="entree ${classeEnPlus}">
-      <span>${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}${e.capacites.length ? ` <span class="secondaire">· ${TEXTES.nbCapacites(e.capacites.length)}</span>` : ""}</span>
+      <span>${pastillesCouleur(cle, e)}${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}${e.capacites.length ? ` <span class="secondaire">· ${TEXTES.nbCapacites(e.capacites.length)}</span>` : ""}</span>
       <span class="boutons-entree">
         <button class="editer" data-action="editer-entree" data-cle="${cle}" data-id="${e.id}">✎</button>
         <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
@@ -1202,7 +1284,13 @@ function capacitesDuPerso(perso) {
   return CHAMPS_LISTE.flatMap((c) => {
     const e = trouverEntree(c.liste, perso[c.champ]);
     if (!e) return [];   // pas choisi, texte libre ou entrée retirée
+    // Couleurs du dégradé : celles des domaines de la classe du perso,
+    // pour ses capacités de classe ET de sous-classe.
+    const couleurs = c.champ === "classe" || c.champ === "sousClasse"
+      ? couleursClasse(trouverEntree("classes", perso.classe))
+      : [];
     return e.capacites.map((cap) => ({
+      couleurs: couleurs,
       champ: c.champ,         // "classe", "sousClasse"... (pour la couleur)
       type: c.label,          // "Classe", "Ascendance"...
       origine: nomEntree(e),  // "Gardien", "Orc"...
@@ -1210,6 +1298,16 @@ function capacitesDuPerso(perso) {
       texte: cap.texte,
     }));
   });
+}
+
+// Les 2 couleurs du dégradé, passées au CSS par des variables --d1/--d2
+// (comme des paramètres d'une Material Instance). 1 seul domaine →
+// même couleur des deux côtés ; aucun → le CSS garde ses valeurs par défaut.
+function styleDomaines(couleurs) {
+  if (couleurs.length === 0) return "";
+  const d1 = couleurs[0];
+  const d2 = couleurs[1] || couleurs[0];
+  return `style="--d1:${d1}; --d2:${d2}"`;
 }
 
 // LE DECK (mode jeu) : la FICHE est la 1re carte, tout à gauche ; les
@@ -1231,7 +1329,7 @@ function afficherDeck(perso) {
     </article>
   `;
   const cartes = caps.map((c) => `
-    <div class="carte-deck carte-capacite" data-type="${c.champ}">
+    <div class="carte-deck carte-capacite" data-type="${c.champ}" ${styleDomaines(c.couleurs)}>
       <span class="type-capacite">${echapper(c.type)} · ${echapper(c.origine)}</span>
       <strong>${echapper(c.nom)}</strong>
       <p>${echapper(c.texte)}</p>
@@ -1592,8 +1690,12 @@ document.getElementById("app").addEventListener("click", (event) => {
       const capacites = capacitesPropres(brouillon.capacites);
       if (!capacites) return;
       // id null = création (sous-classe), sinon modification.
+      // Champs propres à la liste, repris du brouillon.
+      const extra = {};
+      if (cle === "domaines") extra.couleur = couleurSure(brouillon.couleur);
+      if (cle === "classes") extra.domaines = brouillon.domaines.filter((d) => d);   // on retire les "" (aucun)
       const ok = id
-        ? modifierEntree(cle, id, brouillon.fr, brouillon.en, capacites)
+        ? modifierEntree(cle, id, brouillon.fr, brouillon.en, capacites, extra)
         : ajouterEntree(cle, brouillon.fr, brouillon.en, { classe: classe, capacites: capacites });
       // En cas d'erreur (nom vide, doublon), on RESTE sur l'écran
       // (sans rendre(), pour ne pas effacer ce qui a été tapé).
@@ -1612,7 +1714,7 @@ document.getElementById("app").addEventListener("click", (event) => {
       const fr = document.getElementById(`nouveau-fr-${cle}`).value;
       const en = document.getElementById(`nouveau-en-${cle}`).value;
       // Échec (nom vide, doublon) → pas de rendre() : le texte tapé reste.
-      if (!ajouterEntree(cle, fr, en)) return;
+      if (!ajouterEntree(cle, fr, en, champsEnPlus(cle))) return;
       break;
     }
     case "retirer-entree": {
@@ -1739,6 +1841,10 @@ document.getElementById("app").addEventListener("input", (event) => {
   // sauvegarde) et sans rendre() : on ne redessine pas pendant la frappe.
   if (d.brouillon) {
     entreeEditee.brouillon[d.brouillon] = event.target.value;
+    return;
+  }
+  if (d.domaine !== undefined) {   // menu "Domaine 1/2" (un <select> déclenche aussi "input")
+    entreeEditee.brouillon.domaines[Number(d.domaine)] = event.target.value;
     return;
   }
   if (d.capChamp) {   // data-cap-champ devient dataset.capChamp (tirets → majuscule)
