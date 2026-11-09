@@ -200,25 +200,25 @@
          4. métal  : bandes de gris clairs/sombres en diagonale (≈ métal brossé)
        Chaque calque est une variable à part : la carte de classe doit pouvoir
        leur donner à chacun "padding-box" (voir plus bas).
-       radial-gradient(80% 40% at 0% 0%, ...) = ellipse de 80 % de la largeur
-       sur 40 % de la hauteur, centrée sur le coin haut gauche.
+       radial-gradient(115% 60% at 0% 0%, ...) = ellipse de 115 % de la largeur
+       sur 60 % de la hauteur, centrée sur le coin haut gauche.
        Par défaut (classe sans domaines) : coins argentés. */
     .carte-capacite {
       --d1: var(--accent);
       --d2: var(--accent);
       --calque-irise: linear-gradient(115deg,
-          transparent 25%,
-          rgba(255, 140, 210, 0.10) 38%,
-          rgba(130, 225, 255, 0.12) 48%,
-          rgba(255, 240, 160, 0.10) 58%,
-          transparent 72%);
-      --calque-coin1: radial-gradient(85% 45% at 0% 0%,
-          color-mix(in srgb, var(--d1) 85%, transparent) 0%,
-          color-mix(in srgb, var(--d1) 40%, transparent) 45%,
+          transparent 10%,
+          rgba(255, 150, 210, 0.05) 32%,
+          rgba(140, 225, 255, 0.06) 50%,
+          rgba(255, 240, 170, 0.05) 68%,
+          transparent 90%);
+      --calque-coin1: radial-gradient(115% 60% at 0% 0%,
+          color-mix(in srgb, var(--d1) 95%, transparent) 0%,
+          color-mix(in srgb, var(--d1) 60%, transparent) 45%,
           transparent 100%);
-      --calque-coin2: radial-gradient(85% 45% at 100% 100%,
-          color-mix(in srgb, var(--d2) 85%, transparent) 0%,
-          color-mix(in srgb, var(--d2) 40%, transparent) 45%,
+      --calque-coin2: radial-gradient(115% 60% at 100% 100%,
+          color-mix(in srgb, var(--d2) 95%, transparent) 0%,
+          color-mix(in srgb, var(--d2) 60%, transparent) 45%,
           transparent 100%);
       --calque-fond: linear-gradient(160deg,
           #5b6068 0%, #3b3f45 20%, #6a7078 38%, #42464d 55%,
@@ -404,7 +404,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=43" defer></script>
+  <script src="app.js?v=44" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->
