@@ -91,7 +91,7 @@ Tout le reste est hors périmètre pour la V0.1.
 ## Plan V0.2 (validé le 2026-11-07)
 1. PWA : manifeste + service worker « réseau d'abord » → règle le cache d'`index.html`, app installable, hors-ligne partiel.
 2. Devoirs Enguy (sans code) : lire la licence DPCGL (mentions obligatoires, formats autorisés). ~~Choisir FR ou EN~~ → décidé : **EN** (noms du SRD + interface).
-3. Données de référence (classes, ascendances, communautés) dans un fichier séparé + listes déroulantes `<select>` avec option « Autre ».
+3. ~~Fichier de référence dans le dépôt~~ → **listes LOCALES** (classes, ascendances, communautés) saisies par le MJ dans un écran de gestion (ajouter/supprimer), stockées en localStorage + incluses dans l'export JSON. Les `<select>` se remplissent depuis ces listes, avec option « Other ». Aucun contenu SRD dans le dépôt tant que Darrington Press n'a pas répondu. Si feu vert : on livrera une liste officielle en plus.
 4. Écran de création → validation → identité verrouillée ; le mode ✎ devient « Correction MJ ».
 5. Modificateurs de caracs `{ base, modif }` → 1re vraie migration (v1 → v2).
 - Repoussé en V0.3 : montée de niveau ; traduction FR de l'interface et des listes (choix de langue par le joueur, FR/EN uniquement).
@@ -99,11 +99,19 @@ Tout le reste est hors périmètre pour la V0.1.
 
 **Critère de réussite V0.2** : installer l'app sur l'écran d'accueil ; créer un perso via l'écran de création avec listes ; identité verrouillée ; appliquer/retirer un debuff ; un export d'avant la V0.2 se réimporte correctement (migration).
 
+## Licence (décisions du 2026-11-08/09)
+- DPCGL 2.0 lue : les applis/sites ne sont PAS dans les « Permitted Formats » ; l'usage privé entre amis n'est pas une « diffusion ». Traduire ne change rien (traduction = Adaptive Content).
+- Enguy envoie un mail à info@darringtonpress.com (brouillon fait le 2026-11-08) pour demander si une appli gratuite est acceptée. En attente de réponse.
+- En attendant : dépôt public, **aucun nom tiré du SRD dans le code** (pas de synonymes non plus). Noms de caracs/ressources (Agility, HP, Stress, Hope…) gardés : génériques, risque jugé faible (supposition).
+- Prévu : écran « About » avec la mention 4.1 + avertissement de non-affiliation (comme FreshCutGrass, Daggerheart Brews…).
+- Plan B si refus : dépôt privé (gratuit) + Cloudflare Pages + Cloudflare Access (gratuit ≤ 50 utilisateurs, connexion par code email). Pièges : configurer Access sur *.pages.dev (pas seulement les previews) ; le service worker risque de mettre en cache la page de login → adapter sw.js. GitHub Pro (4 $/mois) ne sert à rien : le site resterait public.
+- Icône d12 générée par IA (Claude) : Enguy pourra la refaire lui-même (contexte : Critical Role publiquement hostile à l'art généré par IA).
+
 ## Avancement V0.2
 ### Session 5 — 2026-11-08
 - [x] Étape 1a : `manifest.json` + icônes (d12 doré, `icones/icone.svg` = source)
 - [x] Étape 1b : `sw.js` réseau d'abord ✅ testé sur téléphone : app installée, fonctionne en mode avion
-- [x] Interface passée en anglais via l'objet `TEXTES` (`?v=18`), persos par défaut en anglais (Ranger/Elf/Wildborne, Guardian/Dwarf/Underborne)
+- [x] Interface passée en anglais via l'objet `TEXTES` (`?v=18`), persos par défaut en anglais
 
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
@@ -119,4 +127,4 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-Devoir DPCGL (Enguy), puis V0.2 étape 3 : fichier de données de référence `{ id, en, fr }` + `<select>` avec option « Other ».
+V0.2 étape 3 : écran de gestion des listes locales `{ id, en, fr }` + `<select>` avec option « Other ».

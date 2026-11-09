@@ -74,13 +74,15 @@ const TEXTES = {
 //
 // Persos par défaut, utilisés uniquement au tout premier lancement.
 // ⚠️ Valeurs de départ (PV, stress, espoir) à vérifier dans les règles officielles.
+// LICENCE : aucun nom tiré du SRD ici (classes, ascendances, communautés).
+// Le dépôt est public : ces listes seront des données LOCALES saisies par le MJ.
 const personnagesParDefaut = [
   {
     id: "perso-1",          // identifiant unique : sert à retrouver LE bon perso
     nom: "Lydia",
-    ascendance: "Elf",
-    communaute: "Wildborne",
-    classe: "Ranger",
+    ascendance: "?",
+    communaute: "?",
+    classe: "?",
     niveau: 1,
     caracs: { agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 },
     ressources: {
@@ -92,9 +94,9 @@ const personnagesParDefaut = [
   {
     id: "perso-2",
     nom: "Brom",
-    ascendance: "Dwarf",
-    communaute: "Underborne",
-    classe: "Guardian",
+    ascendance: "?",
+    communaute: "?",
+    classe: "?",
     niveau: 1,
     caracs: { agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 },
     ressources: {
