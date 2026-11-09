@@ -174,6 +174,7 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
 ## Avancement V0.3
 ### Session 7 — 2026-11-09
 - [x] Étape 1 (`?v=30`) : modifier une entrée de liste. Bouton ✎ → écran `ecran = "entree"` (état `entreeEditee = { cle, id }`), rien n'est sauvegardé avant « ✓ Enregistrer » (« ✕ Annuler » = juste quitter). **L'id ne change jamais** (= Row Name d'une Data Table) → renommer met à jour tous les persos. Doublons détectés par **nom** normalisé (`nomPris`), plus par id ; `idLibre()` fabrique `orc-2` si `orc` est déjà pris (cas : « Orc » renommé « Ogre » puis nouvel « Orc »). En cas d'erreur (vide/doublon), le texte tapé reste. Testé en simulation.
+- [x] Numéro de build dans « À propos » (`?v=31`) : `BUILD` est LU depuis `document.currentScript.src` (le `?v=N`), pas recopié → une seule source de vérité. `VERSION_APP = "0.3-dev"`. Rappel : après un push, GitHub Pages met 1-2 min ; fermer/rouvrir l'app, vérifier le build dans À propos.
 
 ## Prochaine étape
 **V0.3 — étape 2 : sous-classes** (voir Plan V0.3). Ancien cadrage :

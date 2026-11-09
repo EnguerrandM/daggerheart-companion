@@ -110,7 +110,7 @@ const TEXTES = {
   // Écran "À propos"
   boutonAPropos: "ⓘ À propos",
   titreAPropos: "À propos",
-  version: (v) => `Version ${v}`,
+  version: (v, build) => `Version ${v} · build ${build}`,
   presentation: "Application de fan, gratuite et sans publicité, pour gérer les fiches de personnages à la table. Compatible avec le jeu de rôle Daggerheart.",
   titreDonnees: "Tes données",
   donnees: "Tout reste sur cet appareil (aucun compte, aucun serveur). Vider les données du navigateur efface tes personnages et tes listes : fais régulièrement un ⬇ Exporter pour garder une sauvegarde.",
@@ -224,7 +224,20 @@ const VERSION_DONNEES = 4;
 
 // Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
 // VERSION_DONNEES, qui ne change que quand la forme des données change.
-const VERSION_APP = "0.2";
+const VERSION_APP = "0.3-dev";
+
+// Numéro de BUILD = le N de "app.js?v=N" dans index.html. On le LIT
+// plutôt que de le recopier : une seule source de vérité, impossible
+// d'oublier de le mettre à jour. document.currentScript = la balise
+// <script> en train de s'exécuter ; new URL(...).searchParams lit le
+// "?v=30" de son adresse. "?" si on ne trouve rien (filet).
+const BUILD = (() => {
+  try {
+    return new URL(document.currentScript.src).searchParams.get("v") || "?";
+  } catch (e) {
+    return "?";
+  }
+})();
 
 // Convertit des caracs "simples" { agility: 2, ... } en { agility: { base: 2, modif: 0 }, ... }.
 // Sert aux persos par défaut, aux nouveaux persos ET à la migration 3 → 4.
@@ -734,7 +747,7 @@ function afficherAPropos() {
     <button class="retour" data-action="retour">${TEXTES.retour}</button>
     <h2>${TEXTES.titreAPropos}</h2>
     <article class="fiche texte">
-      <p><strong>Duality Companion</strong> · ${TEXTES.version(VERSION_APP)}</p>
+      <p><strong>Duality Companion</strong> · ${TEXTES.version(VERSION_APP, BUILD)}</p>
       <p>${TEXTES.presentation}</p>
       <h3>${TEXTES.titreDonnees}</h3>
       <p>${TEXTES.donnees}</p>
