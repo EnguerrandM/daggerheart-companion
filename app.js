@@ -34,7 +34,6 @@ const TEXTES = {
 
   // Écran liste
   titreListe: (n) => `Personnages (${n})`,
-  niveauCourt: (n) => `Niv. ${n}`,
   nouveauPerso: "+ Nouveau personnage",
   exporter: "⬇ Exporter",
   importer: "⬆ Importer",
@@ -210,11 +209,13 @@ const LISTES = [
 //   label  = le texte affiché              autre = "Autre…" (texte libre) permis ?
 //   parent = (facultatif) champ dont dépend celui-ci : on ne propose que
 //            les entrées dont e.classe === perso.classe.
+// L'ORDRE de ce tableau = l'ordre d'affichage partout (liste des persos,
+// fiche, formulaire). Choix d'Enguy : classe, sous-classe, ascendance, communauté.
 const CHAMPS_LISTE = [
-  { champ: "ascendance", liste: "ascendances", label: TEXTES.ascendance, autre: true },
-  { champ: "communaute", liste: "communautes", label: TEXTES.communaute, autre: true },
   { champ: "classe", liste: "classes", label: TEXTES.classe, autre: false },
   { champ: "sousClasse", liste: "sousClasses", label: TEXTES.sousClasse, autre: false, parent: "classe" },
+  { champ: "ascendance", liste: "ascendances", label: TEXTES.ascendance, autre: true },
+  { champ: "communaute", liste: "communautes", label: TEXTES.communaute, autre: true },
 ];
 
 // Valeur spéciale de l'option "Other…" dans les menus. Elle ne peut pas
@@ -748,6 +749,18 @@ function signe(n) {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
+// "Gardien · Rempart · Orc · Village", dans l'ordre de CHAMPS_LISTE.
+// Une seule fonction pour la liste des persos ET la fiche : même ordre partout.
+function resumeIdentite(perso) {
+  return CHAMPS_LISTE.map((c) => echapper(nomChoix(c.liste, perso[c.champ]))).join(" · ");
+}
+
+// Le niveau dans un petit cercle. aria-label = ce que lit un lecteur
+// d'écran (sinon il dirait juste "1").
+function pastilleNiveau(n) {
+  return `<span class="niveau" aria-label="${TEXTES.niveauLong(n)}">${n}</span>`;
+}
+
 function nomAffiche(perso) {
   return  perso.nom.trim() || TEXTES.sansNom;
 }
@@ -772,8 +785,11 @@ function echapper(texte) {
 function afficherListe() {
   const cartes = personnages.map((p) => `
     <button class="carte-perso" data-action="ouvrir" data-id="${p.id}">
-      <strong>${echapper(nomAffiche(p))}${p.cree ? "" : ` <span class="badge">${TEXTES.brouillon}</span>`}</strong>
-      <span>${echapper(nomChoix("classes", p.classe))} · ${echapper(nomChoix("ascendances", p.ascendance))} · ${TEXTES.niveauCourt(p.niveau)}</span>
+      <span class="ligne-nom">
+        <strong>${echapper(nomAffiche(p))}${p.cree ? "" : ` <span class="badge">${TEXTES.brouillon}</span>`}</strong>
+        ${pastilleNiveau(p.niveau)}
+      </span>
+      <span>${resumeIdentite(p)}</span>
       <span>${RESSOURCES.map(([cle, label]) => `${label} ${p.ressources[cle].actuel}/${p.ressources[cle].max}`).join(" · ")}</span>
     </button>
   `).join("");
@@ -911,8 +927,8 @@ function afficherGestionListes() {
 // Bloc identité, version LECTURE.
 function identiteLecture(perso) {
   return `
-    <h2>${echapper(nomAffiche(perso))}</h2>
-    <p>${CHAMPS_LISTE.map((c) => echapper(nomChoix(c.liste, perso[c.champ]))).join(" · ")} · ${TEXTES.niveauLong(perso.niveau)}</p>
+    <h2 class="ligne-nom">${echapper(nomAffiche(perso))} ${pastilleNiveau(perso.niveau)}</h2>
+    <p>${resumeIdentite(perso)}</p>
   `;
 }
 

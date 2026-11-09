@@ -201,6 +201,26 @@
     .plein  { width: 100%; margin-top: 0.75rem; }
     .texte p { line-height: 1.5; color: var(--texte); }
     .texte a { color: var(--or); }
+    /* Nom à gauche, pastille de niveau à droite */
+    .ligne-nom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .niveau {
+      flex-shrink: 0;            /* le cercle ne s'écrase jamais, même avec un long nom */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border: 2px solid var(--or);
+      border-radius: 50%;        /* carré + 50 % = cercle */
+      color: var(--or);
+      font-size: 1rem;
+      font-weight: bold;
+    }
     .badge {
       font-size: 0.75rem;
       font-weight: normal;
@@ -228,7 +248,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=32" defer></script>
+  <script src="app.js?v=33" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

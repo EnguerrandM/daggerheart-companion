@@ -181,6 +181,8 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
   - `CHAMPS_LISTE` passe en objets `{ champ, liste, label, autre, parent }`. `entreesPour()` filtre les sous-classes par la classe du perso ; `choixValide()` : sans « Autre », la valeur doit être un id de la liste proposée. Changer de classe vide la sous-classe (champs dont `parent` = le champ modifié). Sous-classe obligatoire pour valider.
   - Retirer une classe retire ses sous-classes (cascade, confirmation qui le dit). Vieux perso avec une classe en texte libre : affichée « … (hors liste) » en correction MJ, pas perdue en silence, mais à remplacer par une classe de la liste.
   - Testé en simulation (migration v4 → v5, ajout, doublon, filtre, reset, validation, cascade, hors liste).
+- ✅ Étape 2 validée sur téléphone (2026-11-09).
+- [x] Affichage (`?v=33`, demande d'Enguy) : ordre **classe · sous-classe · ascendance · communauté** partout (liste des persos, fiche, formulaires) = ordre de `CHAMPS_LISTE` ; `resumeIdentite()` partagée liste + fiche. Niveau dans une **pastille ronde** à droite du nom (`pastilleNiveau()`, CSS `.ligne-nom` flex + `.niveau` `border-radius: 50%`).
 
 ## Prochaine étape
 **V0.3 — étape 3 : capacités sur les entrées** (voir Plan V0.3). Ancien cadrage :
