@@ -81,6 +81,9 @@ const TEXTES = {
   nomManquant: "Indique d'abord un nom.",
   doublon: (nom) => `« ${nom} » est déjà dans cette liste.`,
   confirmerRetrait: (nom) => `Retirer ${nom} de la liste ?`,
+  titreEditionEntree: (nom) => `Modifier : ${nom}`,
+  enregistrer: "✓ Enregistrer",
+  annuler: "✕ Annuler",
 
   // Menus déroulants de la fiche
   choisir: "— Choisir —",
@@ -408,10 +411,15 @@ let persoOuvertId = null;
 let modeEdition = false;
 
 // Écran "spécial" affiché par-dessus la liste / la fiche :
-//   null = aucun (liste ou fiche selon persoOuvertId), "listes", "apropos".
+//   null = aucun (liste ou fiche selon persoOuvertId), "listes", "apropos",
+//   "entree" (modification d'une entrée de liste).
 // Un seul état au lieu d'un booléen par écran : impossible d'en avoir
 // deux "ouverts" en même temps. (État d'interface, non sauvegardé.)
 let ecran = null;
+
+// Quelle entrée de liste est en cours de modification (écran "entree") :
+// { cle: "classes", id: "seraphin" }, ou null. État d'interface.
+let entreeEditee = null;
 
 // Champs pour lesquels le MJ vient de choisir "Other…" mais n'a encore rien
 // tapé. Sans ça, un champ vide afficherait "— Choose —" et la saisie libre
@@ -508,23 +516,70 @@ function nomEntree(e) {
   return e.fr || e.en;
 }
 
+// Un autre élément de la liste porte-t-il déjà ce nom ? On compare les
+// noms "normalisés" (versId : sans accents ni majuscules), donc « Orc »
+// et « orc » sont des doublons. sauf = l'id à ignorer (l'entrée qu'on
+// est en train de modifier : elle a forcément son propre nom).
+// .some = "est-ce qu'AU MOINS UN élément vérifie la condition ?"
+function nomPris(cle, fr, sauf) {
+  return listes[cle].some((e) => e.id !== sauf && versId(nomEntree(e)) === versId(fr));
+}
+
+// Fabrique un id qui n'existe pas encore dans la liste : "orc", sinon
+// "orc-2", "orc-3"... Utile car un id ne change JAMAIS, même si on renomme
+// l'entrée : "orc" renommé en « Ogre » garde l'id "orc", et un nouvel
+// « Orc » ajouté ensuite doit prendre un autre id.
+function idLibre(cle, fr) {
+  // Nom fait uniquement de symboles ("???") → base vide : on en fabrique une.
+  const base = versId(fr) || "entree-" + Date.now();
+  let id = base;
+  let n = 2;
+  while (listes[cle].some((e) => e.id === id)) {
+    id = `${base}-${n}`;
+    n++;
+  }
+  return id;
+}
+
+// Renvoie true si l'ajout a réussi, false sinon (nom vide, doublon).
 function ajouterEntree(cle, fr, en) {
   fr = fr.trim();
   en = en.trim();
   if (!fr) {
     alert(TEXTES.nomManquant);
-    return;
+    return false;
   }
-  // Nom fait uniquement de symboles ("???") → id vide : on en fabrique un.
-  const id = versId(fr) || "entree-" + Date.now();
-  // .some = "est-ce qu'AU MOINS UN élément vérifie la condition ?"
-  // (le contraire de .every). Ici : cet id existe-t-il déjà ?
-  if (listes[cle].some((e) => e.id === id)) {
+  if (nomPris(cle, fr, null)) {
     alert(TEXTES.doublon(fr));
-    return;
+    return false;
   }
-  listes[cle].push({ id: id, fr: fr, en: en });
+  listes[cle].push({ id: idLibre(cle, fr), fr: fr, en: en });
   sauvegarder();
+  return true;
+}
+
+// Modifie le nom d'une entrée. L'id NE CHANGE PAS : c'est lui que les
+// persos stockent (classe: "seraphin"). Comme le Row Name d'une Data
+// Table : on peut changer tout le contenu de la ligne, mais si on
+// renommait la ligne, tout ce qui pointe dessus serait cassé.
+// Résultat : renommer une classe met à jour tous les persos d'un coup.
+function modifierEntree(cle, id, fr, en) {
+  fr = fr.trim();
+  en = en.trim();
+  if (!fr) {
+    alert(TEXTES.nomManquant);
+    return false;
+  }
+  if (nomPris(cle, fr, id)) {
+    alert(TEXTES.doublon(fr));
+    return false;
+  }
+  const entree = trouverEntree(cle, id);
+  if (!entree) return false;
+  entree.fr = fr;
+  entree.en = en;
+  sauvegarder();
+  return true;
 }
 
 function retirerEntree(cle, id) {
@@ -692,6 +747,28 @@ function afficherAPropos() {
   `;
 }
 
+// Écran MODIFIER UNE ENTRÉE. Contrairement à la fiche (sauvegarde à
+// chaque frappe), ici rien n'est enregistré avant "✓ Enregistrer" :
+// "✕ Annuler" n'a donc rien à défaire, il suffit de quitter l'écran.
+// (Cet écran accueillera les capacités à l'étape 3.)
+function afficherEditionEntree() {
+  const { cle, id } = entreeEditee;
+  const e = trouverEntree(cle, id);
+  return `
+    <button class="retour" data-action="listes">${TEXTES.annuler}</button>
+    <h2>${TEXTES.titreEditionEntree(echapper(nomEntree(e)))}</h2>
+    <article class="fiche">
+      <label class="champ">${TEXTES.nomFr}
+        <input type="text" id="edition-fr" value="${echapper(e.fr || "")}">
+      </label>
+      <label class="champ">${TEXTES.nomEn}
+        <input type="text" id="edition-en" value="${echapper(e.en || "")}">
+      </label>
+      <button class="ajouter" data-action="enregistrer-entree">${TEXTES.enregistrer}</button>
+    </article>
+  `;
+}
+
 // Écran GESTION DES LISTES : pour chaque liste, ses entrées + un mini
 // formulaire d'ajout. Chaque champ a un id unique (nouveau-fr-classes...)
 // pour qu'au clic sur "+ Add" on sache lequel lire.
@@ -703,7 +780,10 @@ function afficherGestionListes() {
     const lignes = triees.map((e) => `
       <li class="entree">
         <span>${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}</span>
-        <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
+        <span class="boutons-entree">
+          <button class="editer" data-action="editer-entree" data-cle="${cle}" data-id="${e.id}">✎</button>
+          <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
+        </span>
       </li>
     `).join("");
 
@@ -1037,12 +1117,20 @@ async function importer(fichier) {
 // Comme un "Widget Switcher" : selon l'état, on affiche un des 4 écrans.
 function rendre() {
   const zone = document.getElementById("app");
-  if (ecran === "listes") {
-    zone.innerHTML = afficherGestionListes();
-    return;
-  }
   if (ecran === "apropos") {
     zone.innerHTML = afficherAPropos();
+    return;
+  }
+  // Filet : si l'entrée a disparu (ex. import entre-temps), on revient aux listes.
+  if (ecran === "entree") {
+    if (entreeEditee && trouverEntree(entreeEditee.cle, entreeEditee.id)) {
+      zone.innerHTML = afficherEditionEntree();
+      return;
+    }
+    ecran = "listes";
+  }
+  if (ecran === "listes") {
+    zone.innerHTML = afficherGestionListes();
     return;
   }
   const perso = trouverPerso(persoOuvertId);
@@ -1107,7 +1195,22 @@ document.getElementById("app").addEventListener("click", (event) => {
       break;
     case "listes":
       ecran = "listes";
+      entreeEditee = null;
       break;
+    case "editer-entree":
+      ecran = "entree";
+      entreeEditee = { cle: bouton.dataset.cle, id: bouton.dataset.id };
+      break;
+    case "enregistrer-entree": {
+      const fr = document.getElementById("edition-fr").value;
+      const en = document.getElementById("edition-en").value;
+      // En cas d'erreur (nom vide, doublon), on RESTE sur l'écran
+      // (sans rendre(), pour ne pas effacer ce qui a été tapé).
+      if (!modifierEntree(entreeEditee.cle, entreeEditee.id, fr, en)) return;
+      ecran = "listes";
+      entreeEditee = null;
+      break;
+    }
     case "apropos":
       ecran = "apropos";
       break;
@@ -1117,7 +1220,8 @@ document.getElementById("app").addEventListener("click", (event) => {
       // la donnée change, puis rendre() redessine tout (champs vidés inclus).
       const fr = document.getElementById(`nouveau-fr-${cle}`).value;
       const en = document.getElementById(`nouveau-en-${cle}`).value;
-      ajouterEntree(cle, fr, en);
+      // Échec (nom vide, doublon) → pas de rendre() : le texte tapé reste.
+      if (!ajouterEntree(cle, fr, en)) return;
       break;
     }
     case "retirer-entree": {

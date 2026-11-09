@@ -139,6 +139,7 @@
       border-bottom: 1px solid var(--bordure);
     }
     .entree .secondaire { color: var(--texte-doux); font-size: 0.9rem; }
+    .boutons-entree { display: flex; gap: 0.4rem; flex-shrink: 0; }
     .entree button {
       width: 2.5rem;
       height: 2.5rem;
@@ -148,6 +149,7 @@
       color: var(--danger);
       font-size: 1rem;
     }
+    .entree button.editer { border-color: var(--or); color: var(--or); }
     .vide { color: var(--texte-doux); font-style: italic; }
     .aide { color: var(--texte-doux); font-size: 0.85rem; font-style: italic; }
     /* ===== Création : jetons de caracs ===== */
@@ -216,7 +218,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=29" defer></script>
+  <script src="app.js?v=30" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

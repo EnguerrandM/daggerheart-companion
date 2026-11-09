@@ -158,8 +158,25 @@ Notes des exos 1-3 (2026-11-08) :
 - Exos 4-5 : `switch/case` = Switch on String, `break` oublié = on enchaîne sur le case suivant ; guillemets = texte, sans = nom de variable ; `dataset` ne lit que les `data-…` (pas la class) ; accolade effacée par accident sur mobile = fichier entier cassé ; référence vs copie (`const copie = perso` = même objet, `structuredClone` = vrai Spawn, copie profonde) ; ne pas réutiliser le même nom pour original et copie ; récupérer le `return` d'une fonction.
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
+## Plan V0.3 (validé le 2026-11-09)
+Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix de cartes) ; un seul mécanisme : une entrée de liste porte ses capacités, le deck les assemble.
+1. Modifier une entrée de liste (prérequis).
+2. Sous-classes : nouvelle liste, chaque entrée pointe vers sa classe (`classe: id`) ; champ `sousClasse` sur le perso ; menu filtré par la classe à la création ; obligatoire pour valider ; changer de classe efface la sous-classe (sauvegarde v5).
+3. Capacités sur les entrées (ascendance, communauté, classe, sous-classe), nombre libre, `capacites: [{ nom, texte }]`, texte brut (sauvegarde v6).
+4. Deck unique sur la fiche (badge de type), swipe `scroll-snap` + ◀ ▶, assemblé automatiquement.
+- Le perso ne stocke que des ids ; capacités dans les listes (localStorage + export), jamais dans le dépôt. Retirer une entrée retire ses capacités du deck.
+- À vérifier SRD : capacités de classe (Espoir + features), 2 sous-classes par classe, capacité de départ de sous-classe.
+
+**Critère de réussite V0.3** (proposé) : saisir les capacités d'une ascendance, d'une communauté, d'une classe et d'une sous-classe ; créer un perso avec sous-classe ; voir ses cartes défiler au doigt et aux boutons ; corriger une capacité et voir la correction sur la fiche ; l'export/import conserve tout.
+
+**Repoussé** : V0.4 = domaines + cartes de domaine + choix des 2 cartes à la création (classe « Autre » bloquée) + vault plus tard. V0.5 = anglais.
+
+## Avancement V0.3
+### Session 7 — 2026-11-09
+- [x] Étape 1 (`?v=30`) : modifier une entrée de liste. Bouton ✎ → écran `ecran = "entree"` (état `entreeEditee = { cle, id }`), rien n'est sauvegardé avant « ✓ Enregistrer » (« ✕ Annuler » = juste quitter). **L'id ne change jamais** (= Row Name d'une Data Table) → renommer met à jour tous les persos. Doublons détectés par **nom** normalisé (`nomPris`), plus par id ; `idLibre()` fabrique `orc-2` si `orc` est déjà pris (cas : « Orc » renommé « Ogre » puis nouvel « Orc »). En cas d'erreur (vide/doublon), le texte tapé reste. Testé en simulation.
+
 ## Prochaine étape
-**V0.3 — capacités** (à cadrer avant de coder) :
+**V0.3 — étape 2 : sous-classes** (voir Plan V0.3). Ancien cadrage :
 - Capacités d'ascendance (2) et de communauté (1) rattachées aux entrées des listes, saisies par Enguy.
 - Cartes de domaine : domaines (2 par classe), cartes saisies par Enguy (nom, domaine, niveau, coût, texte avec ses mots), 2 cartes choisies à la création.
 - Vue « deck » sur la fiche : swipe (CSS `scroll-snap`) + boutons ◀ ▶.
