@@ -231,7 +231,13 @@
     /* Ascendance = doré, communauté = argenté (2 nuances pour un reflet). */
     .carte-capacite[data-type="ascendance"] { --d1: #e8c878; --d2: #a8803a; }
     .carte-capacite[data-type="communaute"] { --d1: #e4e9ec; --d2: #8d989f; }
-    .carte-capacite .type-capacite { color: var(--texte-doux); }
+    /* Titre + texte centrés dans la HAUTEUR : dans une colonne flex,
+       margin auto en haut ET en bas = l'espace libre se partage à parts
+       égales au-dessus et en dessous du bloc. */
+    .corps-capacite { margin: auto 0; }
+    /* Appartenance en bas à droite : align-self pousse ce seul élément
+       à droite de la colonne ; il reste en bas car il vient après le corps. */
+    .carte-capacite .type-capacite { color: var(--texte-doux); align-self: flex-end; text-align: right; }
     .pastille-couleur {
       display: inline-block;
       width: 0.8rem;
@@ -242,7 +248,7 @@
       border: 1px solid rgba(255, 255, 255, 0.3);
     }
     .champ input[type="color"] { height: 3rem; padding: 0.2rem; }
-    .carte-capacite strong { color: var(--or); font-size: 1.15rem; }
+    .carte-capacite strong { display: block; margin-bottom: 0.4rem; color: var(--or); font-size: 1.15rem; }
     .carte-capacite p { margin: 0; white-space: pre-line; line-height: 1.45; }   /* garde les retours à la ligne */
     .nav-deck {
       position: sticky;              /* reste collée en haut quand on fait défiler la page */
@@ -376,7 +382,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=39" defer></script>
+  <script src="app.js?v=40" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

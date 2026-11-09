@@ -207,6 +207,7 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
   - Testé en simulation (migration v6 → v7, saisie, couleurs, import piégé refusé).
 - [x] Retouches (`?v=38`) : dégradé recalculé **en oklab** (`linear-gradient(in oklab 135deg, …)`), coins à 60 %, centre = mélange des 2 couleurs à 30 %, sur un fond **neutre** gris très sombre (le sarcelle de l'app ressortait au centre comme une 3e couleur). Cartes de **classe seulement** : bordure **dorée 2px avec reflet** (bordure transparente + 3e fond doré `border-box` sous les fonds `padding-box` ; les 2 calques en variables `--calque-couleur`/`--calque-fond` pour pouvoir leur donner chacun `padding-box`). Nécessite un Chrome récent (oklab/color-mix : Chrome 111+).
 - [x] `?v=39` : transition **courte** demandée par Enguy (le gris du mélange de couleurs opposées était triste) : d1 60 % → 40 % jusqu'à 42 % de la diagonale, bascule rapide, d2 40 % dès 58 % → 60 %. Option non testée si besoin : pas de mélange (fondu vers le gris neutre au centre).
+- [x] `?v=40` : mise en page des cartes de capacité : titre + texte dans un bloc `.corps-capacite` **centré dans la hauteur** (`margin: auto 0` dans une colonne flex), appartenance (« Classe · Druide ») **en bas à droite** (`align-self: flex-end`). Enguy prévoit de retravailler les fonds de cartes lui-même plus tard (images de fond).
 
 ## Prochaine étape
 **V0.3 — validation du critère de réussite sur téléphone**, puis cadrage V0.4 (voir Plan V0.3). Ancien cadrage :

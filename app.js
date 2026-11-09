@@ -1330,9 +1330,11 @@ function afficherDeck(perso) {
   `;
   const cartes = caps.map((c) => `
     <div class="carte-deck carte-capacite" data-type="${c.champ}" ${styleDomaines(c.couleurs)}>
+      <div class="corps-capacite">
+        <strong>${echapper(c.nom)}</strong>
+        <p>${echapper(c.texte)}</p>
+      </div>
       <span class="type-capacite">${echapper(c.type)} · ${echapper(c.origine)}</span>
-      <strong>${echapper(c.nom)}</strong>
-      <p>${echapper(c.texte)}</p>
     </div>
   `).join("");
   // La barre de navigation est AU-DESSUS (la fiche est longue : en bas,
