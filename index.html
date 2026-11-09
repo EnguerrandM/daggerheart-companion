@@ -182,27 +182,50 @@
       scroll-snap-align: start;
     }
     .deck::-webkit-scrollbar { display: none; }   /* idem (Chrome) */
-    /* Carte de capacité : dégradé en diagonale entre 2 couleurs --d1 et
-       --d2, qui s'estompent vers le centre (fondu), par-dessus le fond sombre.
-       Plusieurs fonds empilés : le 1er listé est DESSUS.
-       color-mix(... 40%, transparent) = la couleur à 40 % d'opacité.
+    /* Carte de capacité : dégradé en diagonale de --d1 (haut gauche) à
+       --d2 (bas droite).
+       - "in oklab" : le mélange se calcule dans un espace de couleur
+         "perceptuel" → le milieu est un vrai mélange des deux, pas un gris
+         boueux (le défaut, en sRGB) ni une 3e teinte.
+       - Les coins sont plus forts (60 %) que le centre (30 %) : la couleur
+         se sent dans les coins, le texte reste lisible au milieu.
+       - Fond NEUTRE (gris très sombre) dessous : avant, c'était le sarcelle
+         de l'app qui ressortait au centre comme une couleur en plus.
+       --milieu = le mélange 50/50 des deux couleurs (color-mix).
        Par défaut (classe sans domaines) : l'or de l'app. */
     .carte-capacite {
       --d1: var(--or);
       --d2: var(--or);
+      --milieu: color-mix(in oklab, var(--d1), var(--d2));
+      /* 2 calques séparés (dégradé de couleur + fond neutre) : on doit
+         pouvoir donner à CHACUN sa zone (padding-box) pour la carte de classe. */
+      --calque-couleur: linear-gradient(in oklab 135deg,
+          color-mix(in srgb, var(--d1) 60%, transparent) 0%,
+          color-mix(in srgb, var(--milieu) 30%, transparent) 50%,
+          color-mix(in srgb, var(--d2) 60%, transparent) 100%);
+      --calque-fond: linear-gradient(160deg, #1c1c1f, #0e0e10);
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
       padding: 1rem;
       border: 1px solid color-mix(in srgb, var(--d1) 60%, var(--d2));
       border-radius: 14px;
+      background: var(--calque-couleur), var(--calque-fond);
+    }
+    /* Carte de CLASSE : bordure dorée de 2px avec un reflet (spéculaire).
+       Astuce : une bordure en dégradé ne marche pas avec des coins arrondis,
+       alors la bordure est TRANSPARENTE et on peint un 3e fond doré
+       "border-box" (qui va jusque sous la bordure), recouvert par les fonds
+       normaux limités au "padding-box" (l'intérieur). Il ne reste visible
+       que l'anneau doré de 2px. */
+    .carte-capacite[data-type="classe"] {
+      border: 2px solid transparent;
       background:
+        var(--calque-couleur) padding-box,
+        var(--calque-fond) padding-box,
         linear-gradient(135deg,
-          color-mix(in srgb, var(--d1) 45%, transparent) 0%,
-          transparent 45%,
-          transparent 55%,
-          color-mix(in srgb, var(--d2) 45%, transparent) 100%),
-        linear-gradient(160deg, var(--carte-creux), #081f1d);
+          #8a6a2c 0%, #e8c878 18%, #fff4d0 24%, #d6b676 32%,
+          #8a6a2c 55%, #c9a24f 75%, #f6e2a8 82%, #a8803a 100%) border-box;
     }
     /* Ascendance = doré, communauté = argenté (2 nuances pour un reflet). */
     .carte-capacite[data-type="ascendance"] { --d1: #e8c878; --d2: #a8803a; }
@@ -352,7 +375,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=37" defer></script>
+  <script src="app.js?v=38" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

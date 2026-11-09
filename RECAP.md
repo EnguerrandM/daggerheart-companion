@@ -205,6 +205,7 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
   - Carte de capacité de **classe et sous-classe** = dégradé diagonal entre les 2 couleurs de domaines, fondu au centre (variables CSS `--d1`/`--d2` passées en `style`, `color-mix(... 45%, transparent)`). **Ascendance = doré, communauté = argenté.**
   - Sécurité : une couleur finit dans un attribut `style` → validée par regex `^#[0-9a-f]{6}$` (`couleurSure()` + `listesValides` refuse un import piégé).
   - Testé en simulation (migration v6 → v7, saisie, couleurs, import piégé refusé).
+- [x] Retouches (`?v=38`) : dégradé recalculé **en oklab** (`linear-gradient(in oklab 135deg, …)`), coins à 60 %, centre = mélange des 2 couleurs à 30 %, sur un fond **neutre** gris très sombre (le sarcelle de l'app ressortait au centre comme une 3e couleur). Cartes de **classe seulement** : bordure **dorée 2px avec reflet** (bordure transparente + 3e fond doré `border-box` sous les fonds `padding-box` ; les 2 calques en variables `--calque-couleur`/`--calque-fond` pour pouvoir leur donner chacun `padding-box`). Nécessite un Chrome récent (oklab/color-mix : Chrome 111+).
 
 ## Prochaine étape
 **V0.3 — validation du critère de réussite sur téléphone**, puis cadrage V0.4 (voir Plan V0.3). Ancien cadrage :
