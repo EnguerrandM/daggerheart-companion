@@ -109,7 +109,7 @@ Tout le reste est hors périmètre pour la V0.1.
 - Enguy envoie un mail à info@darringtonpress.com (brouillon fait le 2026-11-08) pour demander si une appli gratuite est acceptée. En attente de réponse.
 - En attendant : dépôt public, **aucun nom tiré du SRD dans le code** (pas de synonymes non plus). Noms de caracs/ressources (Agility, HP, Stress, Hope…) gardés : génériques, risque jugé faible (supposition).
 - Règle : **le code est public, le contenu reste privé.** Les listes et cartes saisies par Enguy (même reformulées : une reformulation reste du contenu dérivé) vivent dans le localStorage et ses exports JSON, jamais dans le dépôt.
-- Prévu : écran « About » avec la mention 4.1 + avertissement de non-affiliation (comme FreshCutGrass, Daggerheart Brews…).
+- Écran « À propos » fait (non-affiliation) ; mention 4.1 repoussée (voir Avancement V0.2).
 - Plan B si refus : dépôt privé (gratuit) + Cloudflare Pages + Cloudflare Access (gratuit ≤ 50 utilisateurs, connexion par code email). Pièges : configurer Access sur *.pages.dev (pas seulement les previews) ; le service worker risque de mettre en cache la page de login → adapter sw.js. GitHub Pro (4 $/mois) ne sert à rien : le site resterait public.
 - Icône d12 générée par IA (Claude) : Enguy pourra la refaire lui-même (contexte : Critical Role publiquement hostile à l'art généré par IA).
 
@@ -140,6 +140,8 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] Étape 5 (`?v=27`) : modificateurs temporaires. Choix d'Enguy : affichage `+2 (+1)` = base puis TOTAL entre parenthèses (couleur or clair = buff, terracotta = debuff) ; toucher une carac en mode jeu ouvre/ferme son réglage −/+ (état `caracOuverte`). Bouton « Retirer tous les modificateurs » visible s'il y en a.
   - Sauvegarde **v4** : chaque carac = `{ base, modif }`, jamais fusionnés. `versCaracs()` convertit (persos par défaut, nouveaux persos, migration 3 → 4). `persoValide()` vérifie la nouvelle forme (base `null` permise pour un brouillon). Correction MJ = règle la BASE ; la création place la BASE. `BORNES.modif` −5 → +5 (provisoire). `caracsLecture()` supprimée (remplacée par `caracsJeu()`). Testé en simulation : migrations v0/v3 → v4 (y compris brouillon), buff, debuff, retrait, correction MJ, création.
   - Note : une `function` est utilisable avant sa ligne (hoisting), pas un `const` → c'est pour ça que `personnagesParDefaut` peut appeler `versCaracs()`.
+- [x] Écran « ⓘ À propos » (`?v=28`) : version de l'app (`VERSION_APP = "0.2"`, distincte de `VERSION_DONNEES`), présentation, rappel « données locales → exporte », avertissement de non-affiliation + marque, crédits (Enguy ; code avec l'aide de Claude, IA), lien vers le dépôt. État d'écran unifié : `ecran = null | "listes" | "apropos"` (remplace le booléen `ecranListes`).
+- Décision : **pas de mention DPCGL 4.1 pour l'instant** (remarque d'Enguy, validée) : l'app ne contient presque rien du SRD, et la mention reviendrait à revendiquer une licence qui ne couvre pas les applis. À ajouter si Darrington Press donne son accord. Question à poser dans le mail : utiliser « Daggerheart » dans le nom de l'app.
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
 - [x] 2. Nombre de persos dans le titre : « Personnages (3) »
@@ -154,4 +156,4 @@ Notes des exos 1-3 (2026-11-08) :
 - Nouveau fonctionnement : l'éditeur GitHub mobile est trop limité (un fichier par commit, pas de coloration ni de numéros de ligne). Enguy écrit son code dans le chat, Claude relit puis pousse son code tel quel et gère le `?v=N`.
 
 ## Prochaine étape
-Écran « About » (mention DPCGL 4.1 + non-affiliation), puis vérification du critère de réussite V0.2.
+Vérifier le critère de réussite V0.2 sur téléphone, puis clôturer la V0.2.

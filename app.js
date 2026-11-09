@@ -101,6 +101,19 @@ const TEXTES = {
   // Modificateurs temporaires (buff / debuff)
   modif: "Modif.",
   retirerModifs: "Retirer tous les modificateurs",
+
+  // Écran "À propos"
+  boutonAPropos: "ⓘ À propos",
+  titreAPropos: "À propos",
+  version: (v) => `Version ${v}`,
+  presentation: "Application de fan, gratuite et sans publicité, pour gérer les fiches de personnages de Daggerheart à la table.",
+  titreDonnees: "Tes données",
+  donnees: "Tout reste sur cet appareil (aucun compte, aucun serveur). Vider les données du navigateur efface tes personnages et tes listes : fais régulièrement un ⬇ Exporter pour garder une sauvegarde.",
+  titreAvertissement: "Avertissement",
+  nonAffiliation: "Projet non officiel. Il n'est ni affilié à, ni approuvé, ni sponsorisé par Darrington Press ou Critical Role. Daggerheart est une marque de Darrington Press, LLC.",
+  titreCredits: "Crédits",
+  credits: "Conçu par Enguy. Code écrit avec l'aide de Claude (une IA d'Anthropic).",
+  codeSource: "Code source sur GitHub",
 };
 
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
@@ -203,6 +216,10 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 //   v3 : + cree sur chaque perso (false = brouillon en cours de création)
 //   v4 : chaque carac devient { base, modif } (modificateur temporaire)
 const VERSION_DONNEES = 4;
+
+// Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
+// VERSION_DONNEES, qui ne change que quand la forme des données change.
+const VERSION_APP = "0.2";
 
 // Convertit des caracs "simples" { agility: 2, ... } en { agility: { base: 2, modif: 0 }, ... }.
 // Sert aux persos par défaut, aux nouveaux persos ET à la migration 3 → 4.
@@ -388,8 +405,11 @@ let persoOuvertId = null;
 // La fiche est-elle en mode édition ? (état d'interface, non sauvegardé)
 let modeEdition = false;
 
-// Est-on sur l'écran de gestion des listes ? (état d'interface, non sauvegardé)
-let ecranListes = false;
+// Écran "spécial" affiché par-dessus la liste / la fiche :
+//   null = aucun (liste ou fiche selon persoOuvertId), "listes", "apropos".
+// Un seul état au lieu d'un booléen par écran : impossible d'en avoir
+// deux "ouverts" en même temps. (État d'interface, non sauvegardé.)
+let ecran = null;
 
 // Champs pour lesquels le MJ vient de choisir "Other…" mais n'a encore rien
 // tapé. Sans ça, un champ vide afficherait "— Choose —" et la saisie libre
@@ -642,7 +662,31 @@ function afficherListe() {
       <button class="retour" data-action="exporter">${TEXTES.exporter}</button>
       <button class="retour" data-action="importer">${TEXTES.importer}</button>
     </div>
-    <button class="retour" data-action="listes">${TEXTES.boutonListes}</button>
+    <div class="barre fichiers">
+      <button class="retour" data-action="listes">${TEXTES.boutonListes}</button>
+      <button class="retour" data-action="apropos">${TEXTES.boutonAPropos}</button>
+    </div>
+  `;
+}
+
+// Écran À PROPOS : rien d'interactif, juste du texte.
+// target="_blank" = ouvrir le lien dans un nouvel onglet ;
+// rel="noopener" = sécurité standard qui va avec.
+function afficherAPropos() {
+  return `
+    <button class="retour" data-action="retour">${TEXTES.retour}</button>
+    <h2>${TEXTES.titreAPropos}</h2>
+    <article class="fiche texte">
+      <p><strong>Daggerheart Companion</strong> · ${TEXTES.version(VERSION_APP)}</p>
+      <p>${TEXTES.presentation}</p>
+      <h3>${TEXTES.titreDonnees}</h3>
+      <p>${TEXTES.donnees}</p>
+      <h3>${TEXTES.titreAvertissement}</h3>
+      <p>${TEXTES.nonAffiliation}</p>
+      <h3>${TEXTES.titreCredits}</h3>
+      <p>${TEXTES.credits}</p>
+      <p><a href="https://github.com/EnguerrandM/daggerheart-companion" target="_blank" rel="noopener">${TEXTES.codeSource}</a></p>
+    </article>
   `;
 }
 
@@ -988,11 +1032,15 @@ async function importer(fichier) {
 }
 
 // --- 4. LE RENDU : quel écran afficher ? ---------------------
-// Comme un "Widget Switcher" : selon l'état, on affiche un des 3 écrans.
+// Comme un "Widget Switcher" : selon l'état, on affiche un des 4 écrans.
 function rendre() {
   const zone = document.getElementById("app");
-  if (ecranListes) {
+  if (ecran === "listes") {
     zone.innerHTML = afficherGestionListes();
+    return;
+  }
+  if (ecran === "apropos") {
+    zone.innerHTML = afficherAPropos();
     return;
   }
   const perso = trouverPerso(persoOuvertId);
@@ -1052,11 +1100,14 @@ document.getElementById("app").addEventListener("click", (event) => {
       caracOuverte = null;
       persoOuvertId = null;
       modeEdition = false;
-      ecranListes = false;
+      ecran = null;
       champsAutre.clear();
       break;
     case "listes":
-      ecranListes = true;
+      ecran = "listes";
+      break;
+    case "apropos":
+      ecran = "apropos";
       break;
     case "ajouter-entree": {
       const cle = bouton.dataset.cle;
