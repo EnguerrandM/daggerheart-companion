@@ -267,7 +267,7 @@ const VERSION_DONNEES = 7;
 
 // Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
 // VERSION_DONNEES, qui ne change que quand la forme des données change.
-const VERSION_APP = "0.3-dev";
+const VERSION_APP = "0.3";
 
 // Numéro de BUILD = le N de "app.js?v=N" dans index.html. On le LIT
 // plutôt que de le recopier : une seule source de vérité, impossible

@@ -212,11 +212,15 @@ Principe : V0.3 = tout ce qui **découle de l'identité** du perso (aucun choix 
 - [x] `?v=42` : **thème argent + or**. Argent rehaussé (`--accent` #e1e6ec, textes plus clairs, bordures plus visibles) pour ce qu'on touche ; boutons +/− en argent « métal » (dégradé vertical). **Or** (`--or` #d9b96e / `--or-clair` revenus, cette fois pour de vrai) : titre de l'app, titres de sections, noms des persos, pastille de niveau, et **bordure de la fiche de perso** (classe `.fiche-perso` sur la fiche en jeu, en correction MJ et en création).
 - [x] `?v=43` (essai) : cartes de capacité en **métal argenté** au centre (bandes de gris en diagonale ≈ métal brossé), couleurs des domaines qui **débordent des coins** (`radial-gradient(85% 45% at 0% 0%, …)` et coin opposé), **reflet irisé** (bande diagonale rose → cyan → jaune à ~10 %). 4 calques en variables (`--calque-irise`, `--calque-coin1`, `--calque-coin2`, `--calque-fond`) pour garder la bordure dorée à reflet des cartes de classe. `text-shadow` pour la lisibilité. Ascendance/communauté : coins dorés/argentés.
 - [x] `?v=44` : coins de couleur **plus grands et plus intenses** (ellipses 115 % × 60 %, 95 % → 60 % d'opacité), **irisé adouci** (≈ 5 %, étalé sur 10 → 90 % de la diagonale : plus de 3 lignes nettes).
+- ✅ DA des cartes validée par Enguy (« parfait comme ça »). Il retravaillera peut-être des fonds d'images plus tard.
+- ✅ **V0.3 VALIDÉE sur téléphone le 2026-11-09** (critère de réussite complet, export/import compris). `VERSION_APP = "0.3"` (`?v=45`).
 
 ## Prochaine étape
-**V0.3 — validation du critère de réussite sur téléphone**, puis cadrage V0.4 (voir Plan V0.3). Ancien cadrage :
-- Capacités d'ascendance (2) et de communauté (1) rattachées aux entrées des listes, saisies par Enguy.
-- Cartes de domaine : domaines (2 par classe), cartes saisies par Enguy (nom, domaine, niveau, coût, texte avec ses mots), 2 cartes choisies à la création.
-- Vue « deck » sur la fiche : swipe (CSS `scroll-snap`) + boutons ◀ ▶.
-- Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue (mail à envoyer par Enguy).
-- Petits restes possibles : icône à refaire par Enguy ; renommer le dépôt plus tard (optionnel).
+**V0.4 — cartes de domaine : session de CADRAGE avant de coder.** Pistes déjà posées :
+- Liste de **cartes de domaine** saisies par Enguy avec ses mots (domaine, niveau, type ?, coût de rappel ?, nom, texte), sur le modèle des capacités ; la liste `domaines` (avec couleurs) existe déjà.
+- **Choix des cartes à la création**, filtré par les 2 domaines de la classe et le niveau ; ajout/retrait en correction MJ.
+- Les cartes rejoignent le **deck**, aux couleurs de leur domaine.
+- À vérifier dans le SRD : format exact d'une carte de domaine, nombre de cartes au niveau 1, **loadout / vault** (cartes actives / en réserve) — le vault pourra attendre la montée de niveau.
+- Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.
+
+**Petites dettes (non urgentes)** : icônes de l'app encore sarcelle/or (thème passé argent + or) → à refaire par Enguy ; bouton retour d'Android = perte possible d'un brouillon de capacité ; « Soin complet » = hack `delta 99` ; renommer le dépôt (optionnel) ; V0.5 = anglais.
