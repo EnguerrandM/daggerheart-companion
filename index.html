@@ -128,6 +128,27 @@
       background: var(--fond);
     }
 
+    /* ===== Écran des listes ===== */
+    .bloc-liste { margin-bottom: 1rem; }
+    .entrees { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .entree {
+      display: flex;
+      justify-content: space-between;   /* nom à gauche, ✕ à droite */
+      align-items: center;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--bordure);
+    }
+    .entree .fr { color: var(--texte-doux); font-size: 0.9rem; }
+    .entree button {
+      width: 2.5rem;
+      height: 2.5rem;
+      border: 1px solid var(--danger);
+      border-radius: 8px;
+      background: none;
+      color: var(--danger);
+      font-size: 1rem;
+    }
+    .vide { color: var(--texte-doux); font-style: italic; }
   </style>
 </head>
 <body>
@@ -146,7 +167,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=20" defer></script>
+  <script src="app.js?v=21" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

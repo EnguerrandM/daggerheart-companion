@@ -65,6 +65,20 @@ const TEXTES = {
   confirmerImport: (nb, nbActuels) =>
     `Import ${nb} character(s)?\n` +
     `This REPLACES the ${nbActuels} current character(s) and your lists.`,
+
+  // Écran des listes (classes, ascendances, communautés)
+  boutonListes: "☰ Lists",
+  titreListes: "Lists",
+  listeClasses: "Classes",
+  listeAscendances: "Ancestries",
+  listeCommunautes: "Communities",
+  listeVide: "Empty for now.",
+  nomEn: "Name (EN)",
+  nomFr: "Name (FR, optional)",
+  ajouterEntree: "+ Add",
+  nomManquant: "Enter a name in English first.",
+  doublon: (nom) => `"${nom}" is already in this list.`,
+  confirmerRetrait: (nom) => `Remove ${nom} from the list?`,
 };
 
 // --- 1. LA DONNÉE : une LISTE de personnages ----------------
@@ -124,6 +138,15 @@ const RESSOURCES = [
   ["pv", TEXTES.hp],
   ["stress", TEXTES.stress],
   ["espoir", TEXTES.hope],
+];
+
+// Les 3 listes de référence, dans l'ordre d'affichage : [clé, titre].
+// Même principe que CARACS : une seule liste pilote l'écran de gestion
+// (et, à l'étape 3c, les menus déroulants).
+const LISTES = [
+  ["classes", TEXTES.listeClasses],
+  ["ascendances", TEXTES.listeAscendances],
+  ["communautes", TEXTES.listeCommunautes],
 ];
 
 // --- 1b. LA SAUVEGARDE : localStorage ------------------------
@@ -288,6 +311,9 @@ let persoOuvertId = null;
 // La fiche est-elle en mode édition ? (état d'interface, non sauvegardé)
 let modeEdition = false;
 
+// Est-on sur l'écran de gestion des listes ? (état d'interface, non sauvegardé)
+let ecranListes = false;
+
 // Retrouver un perso par son id : .find parcourt le tableau et renvoie
 // le premier élément qui vérifie la condition (= un "Find" sur un Array
 // avec une condition, ou un ForEach + Branch + Break).
@@ -337,6 +363,47 @@ function supprimerPerso(id) {
   // .filter garde tous les éléments qui vérifient la condition :
   // ici, tous SAUF celui qui a cet id. On obtient un NOUVEAU tableau.
   personnages = personnages.filter((p) => p.id !== id);
+  sauvegarder();
+}
+
+// --- 1c bis. LES LISTES : ajouter / retirer une entrée -------
+
+// Fabrique un identifiant à partir du nom anglais :
+//   "Sea Born!" → "sea-born"
+// C'est cet id qu'un perso enregistrera (étape 3c), JAMAIS le nom affiché :
+// on pourra corriger une faute ou ajouter le français sans casser les persos.
+// Les /.../ sont des "expressions régulières" (des motifs de recherche) :
+//   [^a-z0-9]+  = "un ou plusieurs caractères qui ne sont NI lettre NI chiffre"
+//   ^-|-$       = "un tiret au tout début OU à la toute fin"
+function versId(texte) {
+  return texte
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // retire les accents : é → e
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function ajouterEntree(cle, en, fr) {
+  en = en.trim();
+  fr = fr.trim();
+  if (!en) {
+    alert(TEXTES.nomManquant);
+    return;
+  }
+  // Nom fait uniquement de symboles ("???") → id vide : on en fabrique un.
+  const id = versId(en) || "entree-" + Date.now();
+  // .some = "est-ce qu'AU MOINS UN élément vérifie la condition ?"
+  // (le contraire de .every). Ici : cet id existe-t-il déjà ?
+  if (listes[cle].some((e) => e.id === id)) {
+    alert(TEXTES.doublon(en));
+    return;
+  }
+  listes[cle].push({ id: id, en: en, fr: fr });
+  sauvegarder();
+}
+
+function retirerEntree(cle, id) {
+  listes[cle] = listes[cle].filter((e) => e.id !== id);
   sauvegarder();
 }
 
@@ -399,6 +466,44 @@ function afficherListe() {
       <button class="retour" data-action="exporter">${TEXTES.exporter}</button>
       <button class="retour" data-action="importer">${TEXTES.importer}</button>
     </div>
+    <button class="retour" data-action="listes">${TEXTES.boutonListes}</button>
+  `;
+}
+
+// Écran GESTION DES LISTES : pour chaque liste, ses entrées + un mini
+// formulaire d'ajout. Chaque champ a un id unique (nouveau-en-classes...)
+// pour qu'au clic sur "+ Add" on sache lequel lire.
+function afficherGestionListes() {
+  const blocs = LISTES.map(([cle, titre]) => {
+    // [...tableau] = une COPIE, qu'on trie pour l'affichage sans toucher
+    // à l'ordre stocké. localeCompare = comparaison alphabétique propre.
+    const triees = [...listes[cle]].sort((a, b) => a.en.localeCompare(b.en));
+    const lignes = triees.map((e) => `
+      <li class="entree">
+        <span>${echapper(e.en)}${e.fr ? ` <span class="fr">· ${echapper(e.fr)}</span>` : ""}</span>
+        <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
+      </li>
+    `).join("");
+
+    return `
+      <article class="fiche bloc-liste">
+        <h3>${titre} (${listes[cle].length})</h3>
+        ${lignes ? `<ul class="entrees">${lignes}</ul>` : `<p class="vide">${TEXTES.listeVide}</p>`}
+        <label class="champ">${TEXTES.nomEn}
+          <input type="text" id="nouveau-en-${cle}">
+        </label>
+        <label class="champ">${TEXTES.nomFr}
+          <input type="text" id="nouveau-fr-${cle}">
+        </label>
+        <button class="ajouter" data-action="ajouter-entree" data-cle="${cle}">${TEXTES.ajouterEntree}</button>
+      </article>
+    `;
+  }).join("");
+
+  return `
+    <button class="retour" data-action="retour">${TEXTES.retour}</button>
+    <h2>${TEXTES.titreListes}</h2>
+    ${blocs}
   `;
 }
 
@@ -586,10 +691,14 @@ async function importer(fichier) {
 }
 
 // --- 4. LE RENDU : quel écran afficher ? ---------------------
-// Comme un "Widget Switcher" : selon l'état, on affiche la liste ou la fiche.
+// Comme un "Widget Switcher" : selon l'état, on affiche un des 3 écrans.
 function rendre() {
-  const perso = trouverPerso(persoOuvertId);
   const zone = document.getElementById("app");
+  if (ecranListes) {
+    zone.innerHTML = afficherGestionListes();
+    return;
+  }
+  const perso = trouverPerso(persoOuvertId);
   zone.innerHTML = perso ? afficherPersonnage(perso) : afficherListe();
 }
 
@@ -607,7 +716,28 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "retour":
       persoOuvertId = null;
       modeEdition = false;
+      ecranListes = false;
       break;
+    case "listes":
+      ecranListes = true;
+      break;
+    case "ajouter-entree": {
+      const cle = bouton.dataset.cle;
+      // On LIT la page ici (la valeur tapée), mais on ne la modifie pas :
+      // la donnée change, puis rendre() redessine tout (champs vidés inclus).
+      const en = document.getElementById(`nouveau-en-${cle}`).value;
+      const fr = document.getElementById(`nouveau-fr-${cle}`).value;
+      ajouterEntree(cle, en, fr);
+      break;
+    }
+    case "retirer-entree": {
+      const cle = bouton.dataset.cle;
+      const entree = listes[cle].find((e) => e.id === bouton.dataset.id);
+      if (entree && confirm(TEXTES.confirmerRetrait(entree.en))) {
+        retirerEntree(cle, entree.id);
+      }
+      break;
+    }
     case "carac":
       modifierCarac(trouverPerso(persoOuvertId), bouton.dataset.cle, Number(bouton.dataset.delta));
       break;

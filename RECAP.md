@@ -117,6 +117,8 @@ Tout le reste est hors périmètre pour la V0.1.
 - [x] Noms du SRD retirés des persos par défaut (`?v=19`)
 - [x] Étape 3a (`?v=20`) : sauvegarde v2 = `{ version: 2, personnages, listes }`, listes vides `LISTES_VIDES = { classes, ascendances, communautes }` (entrées `{ id, en, fr }`). 1re vraie migration v1 → v2 (ajoute des listes vides). `migrer()` renvoie maintenant l'enveloppe entière ; `listesValides()` ; `enveloppe()` partagée par sauvegarde + export ; `let { personnages, listes } = charger()` (déstructuration = Break Struct). L'import remplace persos ET listes. Testé en simulation : vide, v0, v1, v2, v99, JSON cassé, listes cassées.
 - Limite connue : importer un vieil export (v1) remplace tes listes par des listes vides.
+- [x] Étape 3b (`?v=21`) : écran « ☰ Lists » (état `ecranListes`, 3e écran dans `rendre()`). Constante `LISTES` (= CARACS pour les listes). `ajouterEntree()` : id fabriqué depuis le nom EN par `versId()` (minuscules, sans accents, regex → `sea-born`), refus si nom vide ou id en double (`.some`). `retirerEntree()` (`.filter` + confirm). Affichage trié (`[...].sort` + `localeCompare`) sans toucher à l'ordre stocké. Testé en simulation (ajout, doublon, vide, accents, HTML échappé, retrait).
+- Pas d'édition d'une entrée pour l'instant : retirer puis rajouter. ⚠️ À l'étape 3c, un perso dont l'entrée a été retirée gardera un id orphelin → prévoir un affichage de secours.
 
 ## Exos d'Enguy (avant la V0.2)
 - [x] 1. Styler le bouton « Soin complet » (CSS + variables)
