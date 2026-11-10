@@ -137,19 +137,23 @@
       gap: 0.5rem;
       margin: 0.6rem 0;
     }
-    .case-pv {
+    /* Seuil dans une case dorée ; nombre de PV en petit, entre les cases */
+    .case-seuil {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.8rem;
-      height: 1.8rem;
-      border: 1px solid var(--bordure);
-      border-radius: 6px;
+      min-width: 2.6rem;
+      height: 2.6rem;
+      padding: 0 0.3rem;
+      box-sizing: border-box;
+      border: 2px solid var(--or);
+      border-radius: 8px;
       background: var(--carte-creux);
-      color: var(--texte-doux);
-      font-size: 0.9rem;
+      color: var(--or-clair);
+      font-size: 1.3rem;
+      font-weight: bold;
     }
-    .seuil { min-width: 2rem; text-align: center; color: var(--or-clair); font-size: 1.3rem; font-weight: bold; }
+    .pv-degats { min-width: 1.2rem; text-align: center; color: var(--texte-doux); font-size: 1rem; }
     /* Évasion au milieu, boucliers en dessous */
     .defense {
       display: flex;
@@ -462,7 +466,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=47" defer></script>
+  <script src="app.js?v=48" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

@@ -1173,17 +1173,18 @@ function texteDefense(v) {
   return v === null ? "—" : v;
 }
 
-// Ligne des seuils : [1] majeur [2] grave [3].
-// Les cases 1/2/3 = nombre de PV à cocher selon les dégâts reçus.
+// Ligne des seuils : 1 [majeur] 2 [grave] 3.
+// Les seuils sont dans les cases (c'est ce qu'on lit en jeu) ; les 1/2/3
+// entre eux = nombre de PV à cocher selon les dégâts reçus.
 function ligneSeuils(perso) {
   const d = perso.defense;
   return `
     <div class="seuils" aria-label="${TEXTES.seuils}">
-      <span class="case-pv">1</span>
-      <span class="seuil">${texteDefense(d.seuilMajeur)}</span>
-      <span class="case-pv">2</span>
-      <span class="seuil">${texteDefense(d.seuilGrave)}</span>
-      <span class="case-pv">3</span>
+      <span class="pv-degats">1</span>
+      <span class="case-seuil">${texteDefense(d.seuilMajeur)}</span>
+      <span class="pv-degats">2</span>
+      <span class="case-seuil">${texteDefense(d.seuilGrave)}</span>
+      <span class="pv-degats">3</span>
     </div>
   `;
 }

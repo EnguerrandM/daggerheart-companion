@@ -245,8 +245,11 @@ Principe d'Enguy : **tout à la main pour commencer**, aucune valeur calculée (
   - Demandes d'Enguy : bouton **Soin complet supprimé** (repos court/long plus tard) ; caracs en **grille compacte 3 × 2** en mode jeu (`.cases.compactes`, `grid-template-columns: repeat(3, 1fr)`), le réglage du modif s'affiche sous la grille (« Modif. Finesse »). Création inchangée.
   - Testé en simulation (Chrome headless, capture d'écran 390 px).
 
+- ✅ Étapes 2 + 3 validées sur téléphone (2026-11-10).
+- [x] `?v=48` (demande d'Enguy) : seuils **inversés** → `1 [7] 2 [14] 3` : la valeur du seuil dans une case dorée (`.case-seuil`), le nombre de PV en petit gris entre les cases (`.pv-degats`).
+
 ## Prochaine étape
-Test sur téléphone des étapes 2 + 3, puis validation V0.4 (critère complet).
+Test du `?v=48` sur téléphone, puis validation V0.4 (critère complet) → `VERSION_APP = "0.4"`.
 
 **Repoussé** : V0.5 = cartes de domaine — liste saisie par Enguy (domaine, niveau, type ?, coût de rappel ?, nom, texte) sur le modèle des capacités ; choix à la création filtré par les 2 domaines de la classe et le niveau ; cartes dans le deck aux couleurs du domaine ; à vérifier SRD : format d'une carte, nombre au niveau 1, loadout / vault. V0.6 = anglais.
 - Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.
