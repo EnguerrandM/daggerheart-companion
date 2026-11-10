@@ -225,8 +225,19 @@ Principe d'Enguy : **tout à la main pour commencer**, aucune valeur calculée (
 
 **Dette assumée** : les seuils dépendent du niveau (à vérifier SRD) → à mettre à jour à la main à chaque montée de niveau. Calcul auto possible plus tard par-dessus les mêmes champs. Option écartée pour l'instant : calculateur de dégâts (« 14 → 2 PV »).
 
+**Retouche DA demandée par Enguy (2026-11-10), pour l'étape 3** : évasion **au milieu** de la ligne, en gros ; **en dessous**, une ligne d'armure = autant de **petits boucliers vides** que le score max, qui se **remplissent** quand on les coche (pas de chiffre « armure max » affiché).
+
+## Avancement V0.4
+### Session 8 — 2026-11-10
+- [x] Étape 1 (`?v=46`) : données + édition. Sauvegarde **v8** (migration 7 → 8 : `defense: defenseVide()` sur chaque perso). Forme : `defense: { evasion, seuilMajeur, seuilGrave, armure: { actuel, max } }`, **null = pas encore saisi** (≠ 0 : 0 emplacement = pas d'armure).
+  - `CHAMPS_DEFENSE` (comme `CARACS`) pilote édition + validation ; `valeurDefense()` / `ecrireDefense()` cachent le cas « armure » rangée dans `armure.max`. Baisser le max ramène `actuel` (même piège que `modifierMax`).
+  - Section « Défense » en correction MJ et à la création : 4 champs nombre (`data-defense`), vidé = null, bornés (évasion 0-30, armure 0-12, seuils 1-99 ; provisoire, à vérifier SRD). Valeurs libres en correction MJ (choix d'Enguy).
+  - Création : les 4 obligatoires + garde-fou « seuil grave > seuil majeur ».
+  - Limite : un nombre hors bornes tapé reste affiché dans le champ jusqu'au prochain affichage (la donnée, elle, est bornée).
+  - Testé en simulation (Chrome headless : migration v7 → v8, saisie, bornes, champ vidé, Annuler, création bloquée puis validée). `VERSION_APP = "0.4-dev"`.
+
 ## Prochaine étape
-**V0.4 étape 1** (données + édition + migration v8).
+**V0.4 étapes 2 + 3** : ligne des seuils, puis évasion + boucliers d'armure (nouvelle DA ci-dessus).
 
 **Repoussé** : V0.5 = cartes de domaine — liste saisie par Enguy (domaine, niveau, type ?, coût de rappel ?, nom, texte) sur le modèle des capacités ; choix à la création filtré par les 2 domaines de la classe et le niveau ; cartes dans le deck aux couleurs du domaine ; à vérifier SRD : format d'une carte, nombre au niveau 1, loadout / vault. V0.6 = anglais.
 - Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.

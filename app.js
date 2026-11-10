@@ -130,6 +130,14 @@ const TEXTES = {
   annuler: "✕ Annuler",
   confirmerCorrection: "Modifier un personnage terminé ? (correction MJ : identité, caracs et max)",
 
+  // Défense (V0.4) — tout est saisi à la main
+  defense: "Défense",
+  evasion: "Évasion",
+  armure: "Armure (emplacements)",
+  seuilMajeur: "Seuil majeur",
+  seuilGrave: "Seuil grave",
+  seuilsIncoherents: "seuil grave plus grand que le seuil majeur",
+
   // Modificateurs temporaires (buff / debuff)
   modif: "Modif.",
   retirerModifs: "Retirer tous les modificateurs",
@@ -263,11 +271,13 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 //   v6 : chaque entrée de liste reçoit capacites: [{ nom, texte }]
 //   v7 : + liste domaines (entrées avec couleur "#rrggbb") ; chaque classe
 //        reçoit domaines: [] (ids de ses 2 domaines)
-const VERSION_DONNEES = 7;
+//   v8 : chaque perso reçoit defense: { evasion, seuilMajeur, seuilGrave,
+//        armure: { actuel, max } } (null = pas encore saisi)
+const VERSION_DONNEES = 8;
 
 // Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
 // VERSION_DONNEES, qui ne change que quand la forme des données change.
-const VERSION_APP = "0.3";
+const VERSION_APP = "0.4-dev";
 
 // Numéro de BUILD = le N de "app.js?v=N" dans index.html. On le LIT
 // plutôt que de le recopier : une seule source de vérité, impossible
@@ -389,6 +399,13 @@ function migrer(donnees) {
     donnees.listes.classes.forEach((e) => { e.domaines = []; });
     donnees.version = 7;
   }
+  if (donnees.version === 7) {
+    // 7 → 8 : la défense, VIDE (null) sur chaque perso. On n'invente pas
+    // de valeurs : le MJ les saisira en correction MJ ; en attendant la
+    // fiche affichera "—".
+    donnees.personnages.forEach((p) => { p.defense = defenseVide(); });
+    donnees.version = 8;
+  }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -429,6 +446,40 @@ function listesValides(l) {
     && l.classes.every((e) => Array.isArray(e.domaines) && e.domaines.every((d) => typeof d === "string"));
 }
 
+// La défense d'un nouveau perso (et des vieux persos migrés) : rien de saisi.
+// null ≠ 0 : 0 est une vraie valeur (0 emplacement d'armure = pas d'armure),
+// null veut dire "pas encore rempli".
+function defenseVide() {
+  return { evasion: null, seuilMajeur: null, seuilGrave: null, armure: { actuel: 0, max: null } };
+}
+
+// Les 4 valeurs saisies à la main : [clé, label, bornes].
+// Comme CARACS : une seule liste pour l'édition, la validation et (étapes
+// 2-3) l'affichage. L'armure est rangée à part (defense.armure.max) car
+// elle a aussi un "actuel" (emplacements cochés), comme les PV.
+// ⚠️ Bornes PROVISOIRES (armure max 12 : à vérifier SRD).
+const CHAMPS_DEFENSE = [
+  { cle: "evasion", label: TEXTES.evasion, min: 0, max: 30 },
+  { cle: "armure", label: TEXTES.armure, min: 0, max: 12 },
+  { cle: "seuilMajeur", label: TEXTES.seuilMajeur, min: 1, max: 99 },
+  { cle: "seuilGrave", label: TEXTES.seuilGrave, min: 1, max: 99 },
+];
+
+// Lire / écrire une valeur de défense sans se soucier du cas "armure".
+function valeurDefense(perso, cle) {
+  return cle === "armure" ? perso.defense.armure.max : perso.defense[cle];
+}
+function ecrireDefense(perso, cle, valeur) {
+  if (cle === "armure") {
+    const a = perso.defense.armure;
+    a.max = valeur;
+    // Même piège que modifierMax : 4 cochés puis max passé à 3 → on ramène.
+    a.actuel = Math.min(a.actuel, valeur ?? 0);   // ?? = "si null, alors 0"
+  } else {
+    perso.defense[cle] = valeur;
+  }
+}
+
 // Vérifie qu'un perso a bien tous les morceaux dont l'affichage a besoin.
 // Utile surtout pour l'import : un fichier peut venir de n'importe où.
 function persoValide(p) {
@@ -450,7 +501,15 @@ function persoValide(p) {
         && (typeof c.base === "number" || (!p.cree && c.base === null));
     })
     && estObjet(p.ressources)
-    && RESSOURCES.every(([cle]) => resOk(p.ressources[cle]));
+    && RESSOURCES.every(([cle]) => resOk(p.ressources[cle]))
+    // Défense : chaque valeur est un nombre OU null (pas encore saisie).
+    && estObjet(p.defense)
+    && estObjet(p.defense.armure)
+    && typeof p.defense.armure.actuel === "number"
+    && CHAMPS_DEFENSE.every((c) => {
+      const v = valeurDefense(p, c.cle);
+      return v === null || typeof v === "number";
+    });
 }
 
 // Lit un slot et renvoie l'objet, ou null si vide / illisible.
@@ -613,6 +672,7 @@ function nouveauPerso() {
       stress: { actuel: 0, max: 6 },
       espoir: { actuel: 2, max: 6 },
     },
+    defense: defenseVide(),
   };
 }
 
@@ -840,6 +900,14 @@ function champsManquants(perso) {
   CHAMPS_LISTE.forEach((c) => {
     if (!choixValide(perso, c)) manquants.push(c.label);
   });
+  CHAMPS_DEFENSE.forEach((c) => {
+    if (valeurDefense(perso, c.cle) === null) manquants.push(c.label);
+  });
+  // Garde-fou anti faute de frappe (ex. 18 / 9 au lieu de 9 / 18).
+  const d = perso.defense;
+  if (d.seuilMajeur !== null && d.seuilGrave !== null && d.seuilGrave <= d.seuilMajeur) {
+    manquants.push(TEXTES.seuilsIncoherents);
+  }
   return manquants;
 }
 
@@ -1249,6 +1317,20 @@ function ressourcesEdition(perso) {
   ).join("");
 }
 
+// Défense, version ÉDITION : 4 champs nombre (plus rapide que des −/+
+// pour aller jusqu'à 15 ou 20). Vide = null = pas encore saisi.
+// data-defense = quelle valeur ce champ modifie (comme data-champ).
+function defenseEdition(perso) {
+  return CHAMPS_DEFENSE.map((c) => {
+    const v = valeurDefense(perso, c.cle);
+    return `
+      <label class="champ">${c.label}
+        <input type="number" inputmode="numeric" min="${c.min}" max="${c.max}"
+          data-defense="${c.cle}" value="${v === null ? "" : v}">
+      </label>`;
+  }).join("");
+}
+
 // Écran FICHE : chaque bloc en lecture ou en édition selon modeEdition.
 function afficherPersonnage(perso) {
   // Brouillon → écran de création (tout est éditable, sans passer par ✎).
@@ -1268,6 +1350,8 @@ function afficherPersonnage(perso) {
         ${caracsEdition(perso)}
         <h3>${TEXTES.ressources}</h3>
         ${ressourcesEdition(perso)}
+        <h3>${TEXTES.defense}</h3>
+        ${defenseEdition(perso)}
       </article>
     ` : afficherDeck(perso)}
     ${modeEdition ? `<button class="ajouter" data-action="dupliquer">${TEXTES.dupliquer}</button>` : ""}
@@ -1450,6 +1534,9 @@ function afficherCreation(perso) {
 
       <h3>${TEXTES.ressources}</h3>
       ${ressourcesEdition(perso)}
+
+      <h3>${TEXTES.defense}</h3>
+      ${defenseEdition(perso)}
     </article>
     <button class="ajouter" data-action="valider">${TEXTES.creer}</button>
     <button class="supprimer" data-action="supprimer">${TEXTES.supprimer}</button>
@@ -1852,6 +1939,16 @@ document.getElementById("app").addEventListener("input", (event) => {
   if (d.capChamp) {   // data-cap-champ devient dataset.capChamp (tirets → majuscule)
     entreeEditee.brouillon.capacites[Number(d.index)][d.capChamp] = event.target.value;
     return;
+  }
+
+  if (d.defense) {
+    const perso = trouverPerso(persoOuvertId);
+    const c = CHAMPS_DEFENSE.find((x) => x.cle === d.defense);
+    const n = parseInt(event.target.value, 10);
+    // Champ vidé → null (pas saisi) ; sinon on borne (Clamp).
+    ecrireDefense(perso, c.cle, Number.isNaN(n) ? null : borner(n, c.min, c.max));
+    sauvegarder();
+    return;   // pas de rendre() : le clavier resterait ouvert… puis se fermerait
   }
 
   const champ = event.target.dataset.champ;
