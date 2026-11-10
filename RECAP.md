@@ -248,8 +248,10 @@ Principe d'Enguy : **tout à la main pour commencer**, aucune valeur calculée (
 - ✅ Étapes 2 + 3 validées sur téléphone (2026-11-10).
 - [x] `?v=48` (demande d'Enguy) : seuils **inversés** → `1 [7] 2 [14] 3` : la valeur du seuil dans une case dorée (`.case-seuil`), le nombre de PV en petit gris entre les cases (`.pv-degats`).
 
+- ✅ **V0.4 VALIDÉE sur téléphone le 2026-11-10**. `VERSION_APP = "0.4"` (`?v=49`). Faite en une session : un scope serré (tout à la main) paie.
+
 ## Prochaine étape
-Test du `?v=48` sur téléphone, puis validation V0.4 (critère complet) → `VERSION_APP = "0.4"`.
+**V0.5 — cartes de domaine : session de CADRAGE avant de coder** (pistes ci-dessous). Idées notées pour plus tard : repos court / long (remplace l'ancien Soin complet), calcul auto des seuils à la montée de niveau, calculateur de dégâts.
 
 **Repoussé** : V0.5 = cartes de domaine — liste saisie par Enguy (domaine, niveau, type ?, coût de rappel ?, nom, texte) sur le modèle des capacités ; choix à la création filtré par les 2 domaines de la classe et le niveau ; cartes dans le deck aux couleurs du domaine ; à vérifier SRD : format d'une carte, nombre au niveau 1, loadout / vault. V0.6 = anglais.
 - Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.
