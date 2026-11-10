@@ -128,14 +128,62 @@
       background: linear-gradient(180deg, #ffffff 0%, var(--accent) 45%, #a9b1ba 100%);
       color: var(--fond);
     }
-    .fillHeal {   width: 50%;
-      padding: 0.4rem;
-      border-radius: 16px;
-      border: 1px solid var(--accent);
-      font-size: 1rem;
-      color: var(--accent);
-      background: var(--fond);
+    /* ===== Défense (V0.4) ===== */
+    /* Seuils : [1] 7 [2] 14 [3], centrés */
+    .seuils {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.6rem 0;
     }
+    .case-pv {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      border: 1px solid var(--bordure);
+      border-radius: 6px;
+      background: var(--carte-creux);
+      color: var(--texte-doux);
+      font-size: 0.9rem;
+    }
+    .seuil { min-width: 2rem; text-align: center; color: var(--or-clair); font-size: 1.3rem; font-weight: bold; }
+    /* Évasion au milieu, boucliers en dessous */
+    .defense {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0.8rem 0;
+    }
+    .evasion { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+    .rond-evasion {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 4rem;
+      height: 4rem;
+      border: 3px solid var(--or);
+      border-radius: 50%;
+      color: var(--or-clair);
+      font-size: 1.9rem;
+      font-weight: bold;
+    }
+    .label-defense { color: var(--texte-doux); font-size: 0.8rem; }
+    /* flex-wrap : 12 boucliers passent à la ligne au lieu de déborder */
+    .boucliers { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3rem; }
+    .bouclier {
+      width: 2.4rem;           /* zone de tap assez grande pour un pouce */
+      height: 2.4rem;
+      padding: 0.2rem;
+      border: none;
+      background: none;
+    }
+    .bouclier svg { width: 100%; height: 100%; }
+    .bouclier path { fill: transparent; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; }
+    .bouclier.coche path { fill: var(--accent); }
 
     /* ===== Écran des listes ===== */
     .bloc-liste { margin-bottom: 1rem; }
@@ -337,6 +385,16 @@
     }
     .jeton.choisi { background: var(--accent); color: var(--fond); }   /* "dans la main" */
     .cases { display: flex; flex-direction: column; gap: 0.4rem; }
+    /* Mode jeu : grille compacte 3 × 2 (label en petit, valeur dessous).
+       repeat(3, 1fr) = 3 colonnes de même largeur. */
+    .cases.compactes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
+    .cases.compactes .case-carac {
+      flex-direction: column;
+      gap: 0.1rem;
+      padding: 0.4rem 0.2rem;
+    }
+    .cases.compactes .label-carac { font-size: 0.8rem; color: var(--texte-doux); }
+    .cases.compactes .valeur { font-size: 1.15rem; }
     .case-carac {
       display: flex;
       justify-content: space-between;
@@ -404,7 +462,7 @@
        avant de l'exécuter, sinon il ne trouverait pas <div id="app"> -->
   <!-- ?v=2 : numéro de version. Le changer force le navigateur à
        recharger app.js au lieu de servir sa vieille copie en cache. -->
-  <script src="app.js?v=46" defer></script>
+  <script src="app.js?v=47" defer></script>
 
   <!-- Enregistre le service worker (sw.js) : réseau d'abord + hors-ligne.
        "if" : les vieux navigateurs sans service worker ignorent simplement. -->

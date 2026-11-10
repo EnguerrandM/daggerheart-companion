@@ -44,7 +44,6 @@ const TEXTES = {
   niveauLong: (n) => `Niveau ${n}`,
   caracteristiques: "Caractéristiques",
   ressources: "Ressources",
-  soinComplet: "Soin complet",
   dupliquer: "Dupliquer ce personnage",
   supprimer: "Supprimer ce personnage",
 
@@ -137,6 +136,9 @@ const TEXTES = {
   seuilMajeur: "Seuil majeur",
   seuilGrave: "Seuil grave",
   seuilsIncoherents: "seuil grave plus grand que le seuil majeur",
+  seuils: "Seuils de dégâts",
+  emplacementArmure: (i, n) => `Emplacement d'armure ${i} sur ${n}`,
+  modifDe: (label) => `Modif. ${label}`,
 
   // Modificateurs temporaires (buff / debuff)
   modif: "Modif.",
@@ -1166,6 +1168,52 @@ function afficherGestionListes() {
   `;
 }
 
+// Une valeur de défense à afficher : "—" tant qu'elle n'est pas saisie.
+function texteDefense(v) {
+  return v === null ? "—" : v;
+}
+
+// Ligne des seuils : [1] majeur [2] grave [3].
+// Les cases 1/2/3 = nombre de PV à cocher selon les dégâts reçus.
+function ligneSeuils(perso) {
+  const d = perso.defense;
+  return `
+    <div class="seuils" aria-label="${TEXTES.seuils}">
+      <span class="case-pv">1</span>
+      <span class="seuil">${texteDefense(d.seuilMajeur)}</span>
+      <span class="case-pv">2</span>
+      <span class="seuil">${texteDefense(d.seuilGrave)}</span>
+      <span class="case-pv">3</span>
+    </div>
+  `;
+}
+
+// Un petit bouclier en SVG (dessin vectoriel). Le remplissage est géré
+// en CSS (.bouclier.coche) : même dessin, deux états.
+const SVG_BOUCLIER = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 5 V11 C20 16.5 16.5 20.5 12 22 C7.5 20.5 4 16.5 4 11 V5 Z"/></svg>`;
+
+// Évasion en gros au milieu, puis une rangée de boucliers (un par
+// emplacement d'armure). Pleins = cochés. Pas de chiffre "max" : le
+// nombre de boucliers le montre déjà (choix d'Enguy).
+function blocDefense(perso) {
+  const a = perso.defense.armure;
+  const n = a.max ?? 0;
+  // Array.from({ length: n }, ...) = fabriquer n éléments (= For Loop 0 → n-1).
+  const boucliers = Array.from({ length: n }, (_, i) => `
+    <button class="bouclier ${i < a.actuel ? "coche" : ""}" data-action="armure" data-index="${i}"
+      aria-label="${TEXTES.emplacementArmure(i + 1, n)}" aria-pressed="${i < a.actuel}">${SVG_BOUCLIER}</button>
+  `).join("");
+  return `
+    <div class="defense">
+      <div class="evasion">
+        <span class="rond-evasion">${texteDefense(perso.defense.evasion)}</span>
+        <span class="label-defense">${TEXTES.evasion}</span>
+      </div>
+      ${n > 0 ? `<div class="boucliers">${boucliers}</div>` : ""}
+    </div>
+  `;
+}
+
 // Bloc identité, version LECTURE.
 function identiteLecture(perso) {
   return `
@@ -1274,22 +1322,29 @@ function texteCarac(c) {
 // Mode jeu : chaque carac est un bouton. Le toucher ouvre (ou referme) son
 // réglage de modificateur, juste en dessous.
 function caracsJeu(perso) {
+  // Grille de 3 × 2 cases compactes (label en petit, valeur dessous).
+  // Le réglage du modificateur s'affiche SOUS la grille (au milieu d'une
+  // grille, il casserait l'alignement des cases).
   const lignes = CARACS.map(([cle, label]) => {
     const c = perso.caracs[cle];
     const ouverte = caracOuverte === cle;
     return `
       <button class="case-carac ${ouverte ? "ouverte" : ""}" data-action="ouvrir-carac" data-cle="${cle}">
-        <span>${label}</span>
+        <span class="label-carac">${label}</span>
         <span class="valeur">${texteCarac(c)}</span>
       </button>
-      ${ouverte ? ligneReglage("modif", cle, TEXTES.modif, signe(c.modif)) : ""}
     `;
   }).join("");
+  const ouverte = CARACS.find(([cle]) => cle === caracOuverte);
+  const reglage = ouverte
+    ? ligneReglage("modif", ouverte[0], TEXTES.modifDe(ouverte[1]), signe(perso.caracs[ouverte[0]].modif))
+    : "";
 
   // .some : au moins une carac a un modificateur ?
   const aDesModifs = CARACS.some(([cle]) => perso.caracs[cle].modif !== 0);
   return `
-    <div class="cases">${lignes}</div>
+    <div class="cases compactes">${lignes}</div>
+    ${reglage}
     ${aDesModifs ? `<button class="retour plein" data-action="retirer-modifs">${TEXTES.retirerModifs}</button>` : ""}
   `;
 }
@@ -1304,7 +1359,6 @@ function caracsEdition(perso) {
 function ressourcesLecture(perso) {
   return `
     ${ligneRessource("pv", TEXTES.hp, perso.ressources.pv)}
-    <button class="fillHeal" data-action="soin">${TEXTES.soinComplet}</button>
     ${ligneRessource("stress", TEXTES.stress, perso.ressources.stress)}
     ${ligneRessource("espoir", TEXTES.hope, perso.ressources.espoir)}
   `;
@@ -1405,6 +1459,8 @@ function afficherDeck(perso) {
   const carteFiche = `
     <article class="fiche fiche-perso carte-deck">
       ${identiteLecture(perso)}
+      ${ligneSeuils(perso)}
+      ${blocDefense(perso)}
       <h3>${TEXTES.caracteristiques}</h3>
       ${caracsJeu(perso)}
       <h3>${TEXTES.ressources}</h3>
@@ -1563,9 +1619,13 @@ function modifierRessource(perso, cle, delta) {
   sauvegarder();
 }
 
-function soignerComplet(perso, cle, delta) {
-  const res = perso.ressources[cle]; // [cle] = accès par nom variable, ex. ressources["pv"]
-  res.actuel = res.max;
+// Toucher le bouclier n° i (0 = le 1er) :
+//   - c'est le dernier plein → on le vide (on "décoche") ;
+//   - sinon → on remplit jusqu'à lui.
+// Comme une jauge qu'on règle au doigt : un seul tap, pas de −/+.
+function toucherBouclier(perso, i) {
+  const a = perso.defense.armure;
+  a.actuel = a.actuel === i + 1 ? i : i + 1;
   sauvegarder();
 }
 
@@ -1702,6 +1762,9 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "ouvrir-carac":
       // Toucher la carac ouverte la referme ; toucher une autre l'ouvre à sa place.
       caracOuverte = caracOuverte === bouton.dataset.cle ? null : bouton.dataset.cle;
+      break;
+    case "armure":
+      toucherBouclier(trouverPerso(persoOuvertId), Number(bouton.dataset.index));
       break;
     case "modif":
       modifierModif(trouverPerso(persoOuvertId), bouton.dataset.cle, Number(bouton.dataset.delta));
@@ -1871,11 +1934,6 @@ document.getElementById("app").addEventListener("click", (event) => {
         Number(bouton.dataset.delta)
       );
       break;
-    case "soin":
-        soignerComplet(
-        trouverPerso(persoOuvertId),"pv");
-      break;
-       
     case "ajouter":
       persoOuvertId = ajouterPerso().id; // cree: false → écran de création
       modeEdition = false;

@@ -236,10 +236,19 @@ Principe d'Enguy : **tout à la main pour commencer**, aucune valeur calculée (
   - Limite : un nombre hors bornes tapé reste affiché dans le champ jusqu'au prochain affichage (la donnée, elle, est bornée).
   - Testé en simulation (Chrome headless : migration v7 → v8, saisie, bornes, champ vidé, Annuler, création bloquée puis validée). `VERSION_APP = "0.4-dev"`.
 
+- ✅ Étape 1 validée sur téléphone (2026-11-10).
+- [x] Étapes 2 + 3 (`?v=47`) : affichage sur la fiche (carte 1 du deck), sous l'identité.
+  - `ligneSeuils()` : `[1] majeur [2] grave [3]` centré ; « — » si pas saisi (`texteDefense()`).
+  - `blocDefense()` : rond d'évasion en gros au centre, puis rangée de boucliers SVG (`SVG_BOUCLIER`, remplissage en CSS `.bouclier.coche`), `flex-wrap` → 12 boucliers passent sur 2 lignes. Aucun bouclier si armure 0 ou pas saisie.
+  - `toucherBouclier()` : toucher le dernier plein le vide, sinon on remplit jusqu'à celui touché (un tap, comme une jauge). Action `armure` + `data-index`.
+  - Piège vu : la classe `.plein` existait déjà (`width: 100%`, bouton pleine largeur) → les boucliers pleins s'empilaient. Renommée `.coche`. Leçon : en CSS, un nom de classe est GLOBAL, chercher s'il existe avant d'en créer un.
+  - Demandes d'Enguy : bouton **Soin complet supprimé** (repos court/long plus tard) ; caracs en **grille compacte 3 × 2** en mode jeu (`.cases.compactes`, `grid-template-columns: repeat(3, 1fr)`), le réglage du modif s'affiche sous la grille (« Modif. Finesse »). Création inchangée.
+  - Testé en simulation (Chrome headless, capture d'écran 390 px).
+
 ## Prochaine étape
-**V0.4 étapes 2 + 3** : ligne des seuils, puis évasion + boucliers d'armure (nouvelle DA ci-dessus).
+Test sur téléphone des étapes 2 + 3, puis validation V0.4 (critère complet).
 
 **Repoussé** : V0.5 = cartes de domaine — liste saisie par Enguy (domaine, niveau, type ?, coût de rappel ?, nom, texte) sur le modèle des capacités ; choix à la création filtré par les 2 domaines de la classe et le niveau ; cartes dans le deck aux couleurs du domaine ; à vérifier SRD : format d'une carte, nombre au niveau 1, loadout / vault. V0.6 = anglais.
 - Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.
 
-**Petites dettes (non urgentes)** : icônes de l'app encore sarcelle/or (thème passé argent + or) → à refaire par Enguy ; bouton retour d'Android = perte possible d'un brouillon de capacité ; « Soin complet » = hack `delta 99` ; renommer le dépôt (optionnel).
+**Petites dettes (non urgentes)** : icônes de l'app encore sarcelle/or (thème passé argent + or) → à refaire par Enguy ; bouton retour d'Android = perte possible d'un brouillon de capacité ; renommer le dépôt (optionnel).
