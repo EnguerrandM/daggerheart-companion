@@ -261,8 +261,19 @@ Vérifié SRD : une carte = niveau, domaine, type (3 types : capacité / sort / 
 
 **Critère de réussite V0.5** (proposé) : saisir des cartes dans 2 domaines ; créer un perso en choisissant 2 cartes de ses domaines (refus sinon) ; les voir dans le deck, juste après la fiche ; en ajouter une en correction MJ ; export/import ; réimporter un export V0.4 sans casse.
 
+## Avancement V0.5
+### Session 9 — 2026-11-11
+- [x] Étape 1 (`?v=50`) : saisie des cartes de domaine. Sauvegarde **v9** (migration 8 → 9 : `listes.cartes = []` + `cartes: []` sur chaque perso, ajouté dès maintenant pour éviter une migration à l'étape 2). `VERSION_APP = "0.5-dev"`.
+  - Carte = entrée de la liste `cartes` : `{ id, fr, en, capacites: [], domaine, niveau, type, rappel, texte }`. `capacites` reste vide (gardé pour que le code commun des listes marche) ; le texte de la carte est un champ `texte` unique (retours à la ligne gardés).
+  - `TYPES_CARTE` (capacité / sort / grimoire), `NIVEAU_CARTE` 1-10, `RAPPEL_CARTE` 0-5 (max provisoire). Niveau, type, rappel = menus `<select>` (pas de clavier numérique) ; `menuNombres()`. Dans le brouillon ce sont des textes, reconvertis en nombres bornés à l'enregistrement.
+  - `PARENTS` = table des listes « enfants » (sous-classe → classe, carte → domaine) ; `entreeEditee.classe` devient `entreeEditee.parent`. Création : `{ [PARENTS[cle].champ]: parent }` (nom de champ calculé).
+  - ☰ Listes : cartes sous leur domaine, triées par niveau puis nom (`cartesDe()`, tri à 2 critères), « Niv. 1 · Nom · Type », bouton « + Carte ». Retirer un domaine retire ses cartes (confirmation avec le nombre).
+  - `listesValides` vérifie les cartes (type connu, niveau/rappel entiers) → import piégé refusé.
+  - **Bug corrigé** (trouvé en testant) : depuis la V0.4, les persos par défaut n'avaient pas de `defense` → sur une installation NEUVE, la sauvegarde était jugée invalide au 2e lancement et tout repartait aux défauts (copie dans `-secours`). Ne touchait pas Enguy (ses données venaient de migrations). Leçon : quand `persoValide` exige un nouveau champ, l'ajouter AUSSI à `personnagesParDefaut`.
+  - Testé en simulation (Chrome headless : migration v8 → v9, création, modification, doublon, échappement HTML, persistance, import piégé, cascade, installation neuve).
+
 ## Prochaine étape
-**V0.5 étape 1** (saisie des cartes de domaine). Idées notées pour plus tard : repos court / long (remplace l'ancien Soin complet), calcul auto des seuils à la montée de niveau, calculateur de dégâts, loadout / vault avec la montée de niveau. V0.6 = anglais.
+**V0.5 étape 1 à valider sur téléphone**, puis étape 2 (choix des 2 cartes à la création). Idées notées pour plus tard : repos court / long (remplace l'ancien Soin complet), calcul auto des seuils à la montée de niveau, calculateur de dégâts, loadout / vault avec la montée de niveau. V0.6 = anglais.
 - Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.
 
 **Petites dettes (non urgentes)** : icônes de l'app encore sarcelle/or (thème passé argent + or) → à refaire par Enguy ; bouton retour d'Android = perte possible d'un brouillon de capacité ; renommer le dépôt (optionnel).

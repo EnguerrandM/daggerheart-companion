@@ -104,6 +104,17 @@ const TEXTES = {
   aucunDomaine: "— Aucun —",
   aideDomaines: "Les capacités de la classe (et de ses sous-classes) prennent les couleurs de ses 2 domaines.",
 
+  // Cartes de domaine (V0.5)
+  ajouterCarte: "+ Carte",
+  titreNouvelleCarte: (domaine) => `Nouvelle carte : ${domaine}`,
+  carteDe: (domaine) => `Carte du domaine ${domaine}`,
+  niveauCarte: "Niveau",
+  typeCarte: "Type",
+  rappel: "Coût de rappel (Stress)",
+  texteCarte: "Texte",
+  niv: (n) => `Niv. ${n}`,
+  confirmerRetraitDomaine: (nom, n) => `Retirer ${nom} de la liste ?` + (n > 0 ? ` Ses ${n} carte(s) seront retirées aussi.` : ""),
+
   compteurCapacite: (i, n) => `Capacité ${i} / ${n}`,
   precedente: "Carte précédente",
   suivante: "Carte suivante",
@@ -175,6 +186,7 @@ const personnagesParDefaut = [
     communaute: "",
     classe: "",
     sousClasse: "",
+    cartes: [],
     niveau: 1,
     cree: true,
     caracs: versCaracs({ agility: 3, strength: -1, finesse: 1, instinct: 1, presence: 0, knowledge: 0 }),
@@ -183,6 +195,7 @@ const personnagesParDefaut = [
       stress: { actuel: 0, max: 6 },
       espoir: { actuel: 2, max: 6 },
     },
+    defense: defenseVide(),   // oubli corrigé en V0.5 (voir RECAP)
   },
   {
     id: "perso-2",
@@ -191,6 +204,7 @@ const personnagesParDefaut = [
     communaute: "",
     classe: "",
     sousClasse: "",
+    cartes: [],
     niveau: 1,
     cree: true,
     caracs: versCaracs({ agility: 0, strength: 2, finesse: -1, instinct: 1, presence: 1, knowledge: 0 }),
@@ -199,6 +213,7 @@ const personnagesParDefaut = [
       stress: { actuel: 0, max: 6 },
       espoir: { actuel: 2, max: 6 },
     },
+    defense: defenseVide(),   // oubli corrigé en V0.5 (voir RECAP)
   },
 ];
 
@@ -275,11 +290,13 @@ const ANCIENNE_CLE = "dhc-personnage";         // ancien slot : un seul perso (v
 //        reçoit domaines: [] (ids de ses 2 domaines)
 //   v8 : chaque perso reçoit defense: { evasion, seuilMajeur, seuilGrave,
 //        armure: { actuel, max } } (null = pas encore saisi)
-const VERSION_DONNEES = 8;
+//   v9 : + liste cartes (cartes de domaine : domaine, niveau, type, rappel,
+//        texte) ; chaque perso reçoit cartes: [] (ids de ses cartes, étape 2)
+const VERSION_DONNEES = 9;
 
 // Version de l'APP (affichée dans "À propos"). À ne pas confondre avec
 // VERSION_DONNEES, qui ne change que quand la forme des données change.
-const VERSION_APP = "0.4";
+const VERSION_APP = "0.5-dev";
 
 // Numéro de BUILD = le N de "app.js?v=N" dans index.html. On le LIT
 // plutôt que de le recopier : une seule source de vérité, impossible
@@ -314,7 +331,25 @@ function versCaracs(simples) {
 // { id, en, fr } (= une ligne de Data Table : un Row Name fixe + un texte
 // par langue). Elles sont VIDES dans le code : c'est le MJ qui les remplit
 // (licence : pas de contenu du SRD dans le dépôt public).
-const LISTES_VIDES = { classes: [], ascendances: [], communautes: [], sousClasses: [], domaines: [] };
+const LISTES_VIDES = { classes: [], ascendances: [], communautes: [], sousClasses: [], domaines: [], cartes: [] };
+
+// Cartes de domaine : les 3 types (vérifié SRD) [id, label], et les bornes.
+// L'id est stocké, le label seulement affiché (comme CARACS).
+const TYPES_CARTE = [
+  ["capacite", "Capacité"],
+  ["sort", "Sort"],
+  ["grimoire", "Grimoire"],
+];
+const NIVEAU_CARTE = { min: 1, max: 10 };
+const RAPPEL_CARTE = { min: 0, max: 5 };   // ⚠️ max provisoire
+
+// Listes "enfants" : chaque entrée pointe vers une entrée d'une autre liste.
+//   sous-classe → sa classe (champ "classe")   carte → son domaine (champ "domaine")
+// Une seule table pour l'écran d'entrée, au lieu de if partout.
+const PARENTS = {
+  sousClasses: { liste: "classes", champ: "classe" },
+  cartes: { liste: "domaines", champ: "domaine" },
+};
 
 // Couleur par défaut d'un nouveau domaine (gris neutre).
 const COULEUR_DEFAUT = "#8a8a8a";
@@ -408,6 +443,14 @@ function migrer(donnees) {
     donnees.personnages.forEach((p) => { p.defense = defenseVide(); });
     donnees.version = 8;
   }
+  if (donnees.version === 8) {
+    // 8 → 9 : liste des cartes de domaine (vide) + cartes: [] sur chaque perso.
+    // On ajoute les deux d'un coup : l'étape 2 (choix à la création) n'aura
+    // pas besoin d'une nouvelle migration.
+    donnees.listes.cartes = [];
+    donnees.personnages.forEach((p) => { p.cartes = []; });
+    donnees.version = 9;
+  }
 
   if (donnees.version !== VERSION_DONNEES) {
     // Version inconnue (ex. sauvegarde faite par une version PLUS RÉCENTE de l'app).
@@ -445,7 +488,12 @@ function listesValides(l) {
     && l.sousClasses.every((e) => typeof e.classe === "string")
     // Un domaine a une couleur valide ; une classe, une liste d'ids de domaines.
     && l.domaines.every((e) => typeof e.couleur === "string" && RE_COULEUR.test(e.couleur))
-    && l.classes.every((e) => Array.isArray(e.domaines) && e.domaines.every((d) => typeof d === "string"));
+    && l.classes.every((e) => Array.isArray(e.domaines) && e.domaines.every((d) => typeof d === "string"))
+    // Une carte : son domaine, un niveau et un rappel en nombres, un type connu, un texte.
+    && l.cartes.every((e) => typeof e.domaine === "string"
+      && Number.isInteger(e.niveau) && Number.isInteger(e.rappel)
+      && TYPES_CARTE.some(([id]) => id === e.type)
+      && typeof e.texte === "string");
 }
 
 // La défense d'un nouveau perso (et des vieux persos migrés) : rien de saisi.
@@ -493,6 +541,7 @@ function persoValide(p) {
     && typeof p.niveau === "number"
     && typeof p.cree === "boolean"
     && typeof p.sousClasse === "string"
+    && Array.isArray(p.cartes) && p.cartes.every((id) => typeof id === "string")
     && estObjet(p.caracs)
     // Une carac = { base, modif }. base null est permis seulement pour un
     // brouillon (= valeur pas encore placée à la création).
@@ -596,14 +645,64 @@ let cibleDeck = null;
 let minuterieDeck = null;
 
 // Ouvre l'écran d'entrée : prépare le brouillon (copie profonde).
-function ouvrirEntree(cle, id, classe) {
-  const e = id ? trouverEntree(cle, id) : { fr: "", en: "", classe: classe, capacites: [] };
+// parent = id de la classe (nouvelle sous-classe) ou du domaine (nouvelle
+// carte) ; null pour modifier une entrée existante (on lit son parent).
+function ouvrirEntree(cle, id, parent) {
+  const e = id ? trouverEntree(cle, id) : { fr: "", en: "", capacites: [] };
   const copie = { fr: e.fr || "", en: e.en || "", capacites: structuredClone(e.capacites || []) };
   if (cle === "domaines") copie.couleur = couleurSure(e.couleur);
   // Toujours 2 cases pour les 2 domaines d'une classe ("" = aucun).
   if (cle === "classes") copie.domaines = [(e.domaines || [])[0] || "", (e.domaines || [])[1] || ""];
-  entreeEditee = { cle, id, classe: id ? e.classe : classe, brouillon: copie, original: structuredClone(copie) };
+  if (cle === "cartes") {
+    // Dans le brouillon, niveau et rappel restent du TEXTE (c'est ce que
+    // renvoie un <select>) ; on les reconvertit en nombres à l'enregistrement.
+    copie.niveau = String(e.niveau ?? NIVEAU_CARTE.min);   // ?? = "si null/undefined, alors…"
+    copie.type = e.type || TYPES_CARTE[0][0];
+    copie.rappel = String(e.rappel ?? 0);
+    copie.texte = e.texte || "";
+  }
+  const lien = PARENTS[cle];
+  entreeEditee = {
+    cle, id,
+    parent: id ? (lien ? e[lien.champ] : null) : parent,
+    brouillon: copie, original: structuredClone(copie),
+  };
   ecran = "entree";
+}
+
+// Un menu <select> de nombres de min à max, branché sur le brouillon.
+// Array.from({ length: n }, (_, i) => …) = une boucle For qui fabrique un tableau.
+function menuNombres(champ, min, max, valeur) {
+  const options = Array.from({ length: max - min + 1 }, (_, i) => min + i)
+    .map((n) => `<option value="${n}" ${String(n) === valeur ? "selected" : ""}>${n}</option>`)
+    .join("");
+  return `<select data-brouillon="${champ}">${options}</select>`;
+}
+
+// Les champs propres à une carte de domaine, sur l'écran d'entrée.
+function champsCarte(b) {
+  return `
+    <label class="champ">${TEXTES.niveauCarte}
+      ${menuNombres("niveau", NIVEAU_CARTE.min, NIVEAU_CARTE.max, b.niveau)}
+    </label>
+    <label class="champ">${TEXTES.typeCarte}
+      <select data-brouillon="type">
+        ${TYPES_CARTE.map(([id, label]) => `<option value="${id}" ${b.type === id ? "selected" : ""}>${label}</option>`).join("")}
+      </select>
+    </label>
+    <label class="champ">${TEXTES.rappel}
+      ${menuNombres("rappel", RAPPEL_CARTE.min, RAPPEL_CARTE.max, b.rappel)}
+    </label>
+    <label class="champ">${TEXTES.texteCarte}
+      <textarea rows="8" data-brouillon="texte">${echapper(b.texte)}</textarea>
+    </label>
+  `;
+}
+
+// Le label d'un type de carte ("sort" → "Sort").
+function labelType(id) {
+  const t = TYPES_CARTE.find(([i]) => i === id);
+  return t ? t[1] : id;
 }
 
 // Le brouillon a-t-il changé ? Comparer deux objets champ par champ est
@@ -665,6 +764,7 @@ function nouveauPerso() {
     communaute: "",
     classe: "",
     sousClasse: "",
+    cartes: [],         // ids des cartes de domaine (choisies à l'étape 2)
     niveau: 1,
     cree: false,        // brouillon : la fiche s'ouvre en écran de création
     // null = pas encore placée (le MJ répartit PRESET_CARACS à la création)
@@ -810,6 +910,10 @@ function retirerEntree(cle, id) {
   // sinon elles resteraient orphelines, invisibles dans ☰ Listes.
   if (cle === "classes") {
     listes.sousClasses = listes.sousClasses.filter((e) => e.classe !== id);
+  }
+  // Pareil : retirer un domaine retire ses cartes.
+  if (cle === "domaines") {
+    listes.cartes = listes.cartes.filter((e) => e.domaine !== id);
   }
   sauvegarder();
 }
@@ -1037,13 +1141,15 @@ function choixDomaines(b) {
 }
 
 function afficherEditionEntree() {
-  const { cle, id, classe, brouillon: b } = entreeEditee;
+  const { cle, id, parent, brouillon: b } = entreeEditee;
+  const lien = PARENTS[cle];
+  const nomParent = lien ? echapper(nomChoix(lien.liste, parent)) : "";
   const titre = id
     ? TEXTES.titreEditionEntree(echapper(nomEntree(trouverEntree(cle, id))))
-    : TEXTES.titreNouvelleSousClasse(echapper(nomChoix("classes", classe)));
-  // Pour une sous-classe, on rappelle sa classe sous le titre.
-  const sousTitre = id && cle === "sousClasses"
-    ? `<p class="aide">${TEXTES.sousClasseDe(echapper(nomChoix("classes", classe)))}</p>`
+    : cle === "cartes" ? TEXTES.titreNouvelleCarte(nomParent) : TEXTES.titreNouvelleSousClasse(nomParent);
+  // Pour une sous-classe ou une carte, on rappelle son parent sous le titre.
+  const sousTitre = id && lien
+    ? `<p class="aide">${cle === "cartes" ? TEXTES.carteDe(nomParent) : TEXTES.sousClasseDe(nomParent)}</p>`
     : "";
 
   // Une carte d'édition par capacité. data-index = sa place dans le tableau
@@ -1078,7 +1184,7 @@ function afficherEditionEntree() {
         <label class="champ">${TEXTES.couleur}
           <input type="color" data-brouillon="couleur" value="${couleurSure(b.couleur)}">
         </label>
-      ` : `
+      ` : cle === "cartes" ? champsCarte(b) : `
         ${cle === "classes" ? choixDomaines(b) : ""}
         <h3>${TEXTES.capacites}</h3>
         ${blocsCapacites}
@@ -1116,7 +1222,7 @@ function couleursClasse(classe) {
 function ligneEntree(cle, e, classeEnPlus) {
   return `
     <li class="entree ${classeEnPlus}">
-      <span>${pastillesCouleur(cle, e)}${echapper(nomEntree(e))}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}${e.capacites.length ? ` <span class="secondaire">· ${TEXTES.nbCapacites(e.capacites.length)}</span>` : ""}</span>
+      <span>${cle === "cartes" ? `<span class="secondaire">${TEXTES.niv(e.niveau)} · </span>` : ""}${pastillesCouleur(cle, e)}${echapper(nomEntree(e))}${cle === "cartes" ? ` <span class="secondaire">· ${labelType(e.type)}</span>` : ""}${e.fr && e.en ? ` <span class="secondaire">· ${echapper(e.en)}</span>` : ""}${e.capacites.length ? ` <span class="secondaire">· ${TEXTES.nbCapacites(e.capacites.length)}</span>` : ""}</span>
       <span class="boutons-entree">
         <button class="editer" data-action="editer-entree" data-cle="${cle}" data-id="${e.id}">✎</button>
         <button data-action="retirer-entree" data-cle="${cle}" data-id="${e.id}">✕</button>
@@ -1137,13 +1243,28 @@ function sousClassesDe(classe) {
   `;
 }
 
+// Sous un domaine : ses cartes (décalées), triées par NIVEAU puis par nom,
+// + un bouton pour en ajouter. Même principe que sousClassesDe().
+// .sort avec 2 critères : si les niveaux diffèrent, a.niveau - b.niveau
+// (négatif = a d'abord) ; sinon (0, donc "faux") on compare les noms.
+function cartesDe(domaine) {
+  const cartes = listes.cartes
+    .filter((c) => c.domaine === domaine.id)
+    .sort((a, b) => a.niveau - b.niveau || nomEntree(a).localeCompare(nomEntree(b)));
+  return cartes.map((c) => ligneEntree("cartes", c, "sous-entree")).join("") + `
+    <li class="sous-entree">
+      <button class="petit-ajout" data-action="nouvelle-carte" data-domaine="${domaine.id}">${TEXTES.ajouterCarte}</button>
+    </li>
+  `;
+}
+
 // Écran GESTION DES LISTES : pour chaque liste, ses entrées + un mini
 // formulaire d'ajout. Chaque champ a un id unique (nouveau-fr-classes...)
 // pour qu'au clic sur "+ Add" on sache lequel lire.
 function afficherGestionListes() {
   const blocs = LISTES.map(([cle, titre]) => {
     const lignes = trier(listes[cle]).map((e) =>
-      ligneEntree(cle, e, "") + (cle === "classes" ? sousClassesDe(e) : "")
+      ligneEntree(cle, e, "") + (cle === "classes" ? sousClassesDe(e) : cle === "domaines" ? cartesDe(e) : "")
     ).join("");
 
     return `
@@ -1719,7 +1840,7 @@ function rendre() {
   if (ecran === "entree") {
     const existe = entreeEditee && (entreeEditee.id
       ? trouverEntree(entreeEditee.cle, entreeEditee.id)
-      : trouverEntree("classes", entreeEditee.classe));   // création : la classe parente doit exister
+      : trouverEntree(PARENTS[entreeEditee.cle].liste, entreeEditee.parent));   // création : le parent doit exister
     if (!existe) entreeEditee = null;
     if (existe) {
       zone.innerHTML = afficherEditionEntree();
@@ -1814,6 +1935,9 @@ document.getElementById("app").addEventListener("click", (event) => {
     case "nouvelle-sous-classe":
       ouvrirEntree("sousClasses", null, bouton.dataset.classe);
       break;
+    case "nouvelle-carte":
+      ouvrirEntree("cartes", null, bouton.dataset.domaine);
+      break;
     case "annuler-entree":
       // Filet anti fausse manip : on ne perd pas un long texte sans prévenir.
       if (brouillonModifie() && !confirm(TEXTES.confirmerAbandon)) return;
@@ -1839,7 +1963,7 @@ document.getElementById("app").addEventListener("click", (event) => {
       break;
     }
     case "enregistrer-entree": {
-      const { cle, id, classe, brouillon } = entreeEditee;
+      const { cle, id, parent, brouillon } = entreeEditee;
       const capacites = capacitesPropres(brouillon.capacites);
       if (!capacites) return;
       // id null = création (sous-classe), sinon modification.
@@ -1847,9 +1971,18 @@ document.getElementById("app").addEventListener("click", (event) => {
       const extra = {};
       if (cle === "domaines") extra.couleur = couleurSure(brouillon.couleur);
       if (cle === "classes") extra.domaines = brouillon.domaines.filter((d) => d);   // on retire les "" (aucun)
+      if (cle === "cartes") {
+        // Texte du <select> → nombre, borné (filet), et texte nettoyé.
+        extra.niveau = borner(Number(brouillon.niveau), NIVEAU_CARTE.min, NIVEAU_CARTE.max);
+        extra.type = brouillon.type;
+        extra.rappel = borner(Number(brouillon.rappel), RAPPEL_CARTE.min, RAPPEL_CARTE.max);
+        extra.texte = brouillon.texte.trim();
+      }
+      // Création : on accroche l'entrée à son parent ({ classe: id } ou { domaine: id }).
+      // [PARENTS[cle].champ] entre crochets = un nom de champ calculé.
       const ok = id
         ? modifierEntree(cle, id, brouillon.fr, brouillon.en, capacites, extra)
-        : ajouterEntree(cle, brouillon.fr, brouillon.en, { classe: classe, capacites: capacites });
+        : ajouterEntree(cle, brouillon.fr, brouillon.en, { [PARENTS[cle].champ]: parent, capacites: capacites, ...extra });
       // En cas d'erreur (nom vide, doublon), on RESTE sur l'écran
       // (sans rendre(), pour ne pas effacer ce qui a été tapé).
       if (!ok) return;
@@ -1875,7 +2008,9 @@ document.getElementById("app").addEventListener("click", (event) => {
       const entree = listes[cle].find((e) => e.id === bouton.dataset.id);
       const message = cle === "classes"
         ? TEXTES.confirmerRetraitClasse(nomEntree(entree || {}), listes.sousClasses.filter((sc) => sc.classe === bouton.dataset.id).length)
-        : TEXTES.confirmerRetrait(nomEntree(entree || {}));
+        : cle === "domaines"
+          ? TEXTES.confirmerRetraitDomaine(nomEntree(entree || {}), listes.cartes.filter((c) => c.domaine === bouton.dataset.id).length)
+          : TEXTES.confirmerRetrait(nomEntree(entree || {}));
       if (entree && confirm(message)) {
         retirerEntree(cle, entree.id);
       }
