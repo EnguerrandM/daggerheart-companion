@@ -250,10 +250,19 @@ Principe d'Enguy : **tout à la main pour commencer**, aucune valeur calculée (
 
 - ✅ **V0.4 VALIDÉE sur téléphone le 2026-11-10**. `VERSION_APP = "0.4"` (`?v=49`). Faite en une session : un scope serré (tout à la main) paie.
 
-## Prochaine étape
-**V0.5 — cartes de domaine : session de CADRAGE avant de coder** (pistes ci-dessous). Idées notées pour plus tard : repos court / long (remplace l'ancien Soin complet), calcul auto des seuils à la montée de niveau, calculateur de dégâts.
+## Plan V0.5 — cartes de domaine (cadrage validé le 2026-11-11)
+Vérifié SRD : une carte = niveau, domaine, type (3 types : capacité / sort / grimoire), coût de rappel (Stress), nom, texte. Création = **2 cartes de niveau 1** des 2 domaines de la classe ; +1 carte par niveau (niveau ≤ celui du perso). Loadout = 5 actives max, le reste au vault ; échange gratuit en début de repos, sinon coût de rappel en Stress. Sous-classe / ascendance / communauté ne comptent pas.
+1. **Saisie des cartes** dans ☰ Listes, rangées sous leur domaine (modèle des sous-classes), triées par niveau. Entrée `{ id, fr, en, domaine, niveau, type, rappel, texte }`. Sauvegarde **v9**.
+2. **Choix à la création** : toujours **2 cartes** (choix d'Enguy, même si le perso commence au-dessus du niveau 1), filtrées par les 2 domaines de la classe, niveau 1. Obligatoire pour valider.
+3. **Deck** : ordre **fiche → domaine → classe → sous-classe → ascendance → communauté** (choix d'Enguy). Cartes aux couleurs de leur domaine, niveau + type + coût de rappel affichés.
+4. **Correction MJ** : ajouter / retirer des cartes à la main (remplace la montée de niveau en attendant).
+- **Hors périmètre** (choix d'Enguy) : loadout / vault (inutile avant 6 cartes ≈ niveau 5, à faire avec la montée de niveau ; le modèle de données doit le permettre), Stress de rappel, jetons d'usage.
+- Conseil : ne saisir que les cartes de niveau 1 des domaines des joueurs pour commencer.
 
-**Repoussé** : V0.5 = cartes de domaine — liste saisie par Enguy (domaine, niveau, type ?, coût de rappel ?, nom, texte) sur le modèle des capacités ; choix à la création filtré par les 2 domaines de la classe et le niveau ; cartes dans le deck aux couleurs du domaine ; à vérifier SRD : format d'une carte, nombre au niveau 1, loadout / vault. V0.6 = anglais.
+**Critère de réussite V0.5** (proposé) : saisir des cartes dans 2 domaines ; créer un perso en choisissant 2 cartes de ses domaines (refus sinon) ; les voir dans le deck, juste après la fiche ; en ajouter une en correction MJ ; export/import ; réimporter un export V0.4 sans casse.
+
+## Prochaine étape
+**V0.5 étape 1** (saisie des cartes de domaine). Idées notées pour plus tard : repos court / long (remplace l'ancien Soin complet), calcul auto des seuils à la montée de niveau, calculateur de dégâts, loadout / vault avec la montée de niveau. V0.6 = anglais.
 - Rappels : contenu privé (localStorage + exports), jamais dans le dépôt. Pas de multiclassage. Réponse de Darrington Press attendue.
 
 **Petites dettes (non urgentes)** : icônes de l'app encore sarcelle/or (thème passé argent + or) → à refaire par Enguy ; bouton retour d'Android = perte possible d'un brouillon de capacité ; renommer le dépôt (optionnel).
